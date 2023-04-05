@@ -1,0 +1,16 @@
+requests
+logger
+pymongo
+ConfigParser
+pyjwt
+flask
+sqlmap
+Flask-SQLAlchemy
+psycopg2-binary
+networkx
+pandas
+matplotlib
+Flask-APScheduler
+scipy
+numpy
+pymannkendall

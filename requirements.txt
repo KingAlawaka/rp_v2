@@ -1,0 +1,11 @@
+requests
+logger
+pymongo
+ConfigParser
+pyjwt
+flask
+sqlmap
+psycopg2-binary
+Flask-APScheduler
+docker
+Flask-Cors

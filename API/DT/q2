@@ -1,0 +1,2 @@
+-- SQLite
+select  DT_ID,data_type,stdev_value,min,max,avg from final_value_tbl;

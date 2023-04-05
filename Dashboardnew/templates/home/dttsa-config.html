@@ -1,0 +1,275 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Page User {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Trust and Security Analyzer Configuration Panel</h5>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Security</h5>
+      </div>
+      <div class="card-body">
+        <div class="card-description">
+          API Vulnerability: <br>
+          9 High critical level issues (H) <br>
+          2 Medium critical level issues (M) <br>
+          9 Low critical level issues (L) <br>
+
+          API Vulnerability score will be: <br>
+          H * 3 + M * 2 + L * 1 = 45 <br>
+        </div>
+      </div>
+      <div class="card-footer">
+        <!-- <button type="submit" class="btn btn-fill btn-primary">Save</button> -->
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Reliability</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 pr-md-1">
+            <div class="form-group">
+              <label>Error Rate</label>
+              <div class="card-description">
+                Error Rate = Successful Requests / Total Requiests  
+              </div>
+              <input type="text" id="error_rate_high" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+            </div>
+          </div>
+          <div class="col-md-6 pl-md-1">
+            <div class="form-group">
+              <label>Weight %</label>
+              <input type="text" id="security_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+            </div>
+          </div>
+        </div>
+        
+
+
+      </div>
+      <div class="card-footer">
+        <button type="submit" class="btn btn-fill btn-primary">Save</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Resilience</h5>
+      </div>
+      <div class="card-body">
+
+      </div>
+      <div class="card-footer">
+        <button type="submit" class="btn btn-fill btn-primary">Save</button>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Dependency and Dependability</h5>
+      </div>
+      <div class="card-body">
+
+      </div>
+      <div class="card-footer">
+        <button type="submit" class="btn btn-fill btn-primary">Save</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Goal Analyzer</h5>
+      </div>
+      <div class="card-body">
+
+      </div>
+      <div class="card-footer">
+        <button type="submit" class="btn btn-fill btn-primary">Save</button>
+      </div>
+    </div>
+
+
+  </div>
+  <div class="col-4">
+
+    <div class="card card-user">
+      <div class="card-body">
+        <p class="card-text">
+        <div class="author">
+          <div class="block block-one"></div>
+          <div class="block block-two"></div>
+          <div class="block block-three"></div>
+          <div class="block block-four"></div>
+          <a href="javascript:void(0)">
+            <img class="avatar" src="/static/assets/img/logo.png" >
+          </a>
+        </div>
+        </p>
+        <div class="card-description">
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Security</label>
+                <input type="text" id="security_value" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="security_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Reliability</label>
+                <input type="text" id="reliability_value" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="reliability_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Resilience</label>
+                <input type="text" id="resilience_value" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="resilience_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Dependability and Dependency</label>
+                <input type="text" id="depend_value" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="depend_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Goal Analyzer</label>
+                <input type="text" id="goal_value" class="form-control" placeholder="Score" value="45" onchange="calculate()">
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="goal_weight" class="form-control" placeholder="Weight" value="20" onchange="calculate()">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 pr-md-1">
+              <div class="form-group">
+                <label>Trust and Security Score</label>
+                <input type="text" id="total_score" class="form-control" placeholder="Score" value="" >
+              </div>
+            </div>
+            <div class="col-md-6 pl-md-1">
+              <div class="form-group">
+                <label>Weight %</label>
+                <input type="text" id="total_weight" class="form-control" placeholder="Weight" value="" >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <!-- <div class="button-container">
+          <button href="javascript:void(0)" class="btn btn-icon btn-round btn-facebook">
+            <i class="fab fa-facebook"></i>
+          </button>
+          <button href="javascript:void(0)" class="btn btn-icon btn-round btn-twitter">
+            <i class="fab fa-twitter"></i>
+          </button>
+          <button href="javascript:void(0)" class="btn btn-icon btn-round btn-google">
+            <i class="fab fa-google-plus"></i>
+          </button>
+        </div> -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+<script>
+  $(document).ready(function() {
+    // Javascript method's body can be found in assets/js/demos.js
+    pageconfig.configInit();
+
+  });
+
+  function calculate(){
+    security_value = document.getElementById('security_value')
+    security_weight = document.getElementById('security_weight')
+    reliablity_value = document.getElementById('reliability_value')
+    reliability_weight = document.getElementById('reliability_weight')
+    resilience_value = document.getElementById('resilience_value')
+        resilience_weight = document.getElementById('resilience_weight')
+        depend_value = document.getElementById('depend_value')
+        depend_weight = document.getElementById('depend_weight')
+        goal_value = document.getElementById('goal_value')
+        goal_weight = document.getElementById('goal_weight')
+        total_value = document.getElementById('total_score')
+        total_weight = document.getElementById('total_weight')
+
+      security_score = Math.round(parseInt(security_value.value) * (parseInt(security_weight.value)/100))
+      reliability_score = Math.round(parseInt(reliablity_value.value) * (parseInt(reliability_weight.value)/100))
+      resilience_score = Math.round(parseInt(resilience_value.value) * (parseInt(resilience_weight.value)/100))
+      depend_score = Math.round(parseInt(depend_value.value) * (parseInt(depend_weight.value)/100))
+      goal_score = Math.round(parseInt(goal_value.value) * (parseInt(goal_weight.value)/100))
+
+      total_score = security_score+reliability_score+resilience_score+depend_score+goal_score
+      total_weight_val = parseInt(security_weight.value)+parseInt(reliability_weight.value)+parseInt(resilience_weight.value)+parseInt(depend_weight.value)+parseInt(goal_weight.value)
+
+      total_value.value = total_score
+      total_weight.value = total_weight_val
+
+    console.log(total_score)
+
+    
+
+  }
+
+</script>
+
+{% endblock javascripts %}

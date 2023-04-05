@@ -1,0 +1,132 @@
+CREATE TABLE public."user"
+(
+    id serial,
+    name varchar(50),
+    age integer,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE public."test2_tbl"
+(
+    id serial,
+    name varchar(50),
+    age integer,
+	time_stamp timestamp without time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC'),
+    PRIMARY KEY (id)
+);
+
+Insert Into public."test_tbl" (name,age) values ('test name2',23);
+
+
+
+create table public."organization_tbl"
+(
+	id serial,
+	org_name varchar(50),
+	org_code varchar(10),
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+insert into public."organization_tbl" (org_name,org_code) values ("test_org1", "TORG_1");
+
+select * from public."organization_tbl";
+
+create table public."user_tbl"
+(
+	id serial,
+	username varchar(20),
+	password varchar(50),
+	org_code varchar(10),
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table API_tbl
+(
+	id serial,
+	DT_ID varchar(20),
+	URL varchar(50),
+	description text,
+	type varchar(10),
+	sample_json text,
+	user_auth_token text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+insert into API_tbl (DT_ID,URL,description,type,sample_json,user_auth_token ) 
+values ('DT1','127.0.0.1/send','test DT server','GET','{message : text}','');
+
+select * from API_tbl;
+
+
+create table DT_tbl
+(
+	id serial,
+	org_code varchar(50),
+	DT_code varchar(50),
+	DT_name varchar(50),
+	DT_description text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+insert into DT_tbl (org_code,DT_code,DT_name,DT_description) values ('TORG_1','DT_2','Sample DT 2','Sample DT description 2 ') returning id;
+
+create table api_security_check_tbl
+(
+	id serial,
+	DT_ID int,
+	API_ID int,
+	scan_id varchar(50),
+	low_count int,
+	mid_count int,
+	high_count int,
+	report text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+insert into api_security_check_tbl (DT_ID,API_ID,scan_id) values (1,1,'text_scan_ID');
+
+update api_security_check_tbl set low_count=2,mid_count=1,high_count=0,timestamp=current_timestamp at time zone 'UTC' where id = 1;
+
+select * from api_tbl order by id desc limit 5;
+
+select * from api_security_check_tbl;
+
+select * from api_security_check_tbl where low_count is NULL and mid_count is null and high_count is null;
+
+select dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name,sum(api_security_check_tbl.low_count) as low_sum,sum(api_security_check_tbl.mid_count) as mid_sum,sum(api_security_check_tbl.high_count) as high_sum from dt_tbl join api_security_check_tbl on dt_tbl.id = dt_id group by dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name; 
+
+select * from api_security_check_tbl where (low_count is NULL and mid_count is null and high_count is null) or (low_count = 0 and mid_count = 0 and high_count = 0) ;
+
+
+insert into api_qos_tbl (DT_ID,API_ID,test_count) values (1,2,0); 
+
+truncate table api_qos_tbl;
+
+select api_tbl.dt_id,api_qos_tbl.api_id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token
+from api_tbl
+join api_qos_tbl on api_tbl.id = API_ID
+where api_qos_tbl.test_count = 0;
+
+ALTER TABLE api_tbl ALTER COLUMN dt_id TYPE integer USING (trim(dt_id)::integer);
+
+select backup_service_locations_tbl.ip as backup_ip,api_tbl.dt_id,api_qos_tbl.api_id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token
+from backup_service_locations_tbl
+inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id
+inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id
+where api_qos_tbl.test_count=1;
+
+#get unique values
+select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token
+from backup_service_locations_tbl
+inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id
+inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id
+where api_qos_tbl.test_count=1
+order by api_tbl.id;
+
+### truncate and restart tables
+TRUNCATE api_qos_records_tbl,api_qos_tbl,api_security_check_tbl,api_tbl,backup_qos_records_tbl,backup_qos_tbl,backup_service_locations_tbl,dt_tbl,dttsa_evaluation_config_tbl RESTART IDENTITY;

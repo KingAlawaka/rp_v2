@@ -1,0 +1,40 @@
+API Vulnerability:
+9 High critical level issues (H) 
+2 Medium critical level issues (M) 
+9 Low critical level issues (L) 
+
+API Vulnerability score will be:
+H * 3 + M * 2 + L * 1 = 45 
+
+Reliability 
+QoS
+
+Error rate = sucess requests / total requests 
+best case = 1
+worst case = 0
+
+requests per sec
+high = <config UI specify the value> __ >= 130
+mid = <config UI specify the value>  129< __ > 100
+low = <config UI specify the value>  99 < __ > 0
+
+Time per request
+high = <config UI specify the value> 0.5 > __
+mid = <config UI specify the value>  0.8 < __ > 0.6
+low = <config UI specify the value>  __ > 0.9
+
+Best case for Reliability
+ER = 1
+RPS = 3
+TPR = 3 
+total = 7
+
+Reselience
+Backup location reachability = 3
+QoS of the backup location = 7
+
+Dependability
+Avg of subscribed services of others
+
+Goa
+

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    {% block title %} Organizations {% endblock %}
+
+    {% for org in orgList %}
+        <div class='book'>
+            <h3>#{{ org[0] }} - {{ org[1] }} BY {{ org[2] }}</h3>
+            <i><p>({{ org[1] }} organization full name)</p></i>
+            <p class='review'>{{ org[2] }}</p>
+            <i><p>Added {{ org[3] }}</p></i>
+        </div>
+    {% endfor %}
+{% endblock %}

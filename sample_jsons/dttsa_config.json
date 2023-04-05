@@ -1,0 +1,169 @@
+{
+    "trust categories": [
+        {
+            "category": "security",
+            "evaluation": "API Vulnerability",
+            "test cases": "3",
+            "tests": [
+                {
+                    "test": "High API vulnerabilities",
+                    "category": "count",
+                    "high cases": "9",
+                    "high score": "3"
+                },
+                {
+                    "test": "Mid API Vulnerabilities",
+                    "category": "count",
+                    "mid cases": "2",
+                    "mid score": "2"
+                },
+                {
+                    "test": "Low API Vulnerabilities",
+                    "category": "count",
+                    "low cases": "9",
+                    "low score": "1"
+                }
+            ],
+            "total_score": "45"
+        },
+        {
+            "category": "reliability",
+            "evaluation": "QoS",
+            "test cases": "3",
+            "tests": [
+                {
+                    "test": "error rate",
+                    "category": "fixed value",
+                    "best case": "1",
+                    "worst case": "0"
+                },
+                {
+                    "test": "request per sec",
+                    "category": "comparison",
+                    "conditions": [
+                        {
+                            "condition category": "high",
+                            "conditions": [
+                                {
+                                    "condition operator": ">=",
+                                    "condition value": "130"
+                                }
+                            ]
+                            
+                        },
+                        {
+                            "condition category": "mid",
+                            "conditions": [
+                                {
+                                    "condition operator": ">",
+                                    "condition value": "100"
+                                },
+                                {
+                                    "condition operator": "<",
+                                    "condition value": "129"
+                                }
+                            ]
+                        },
+                        {
+                            "condition category": "low",
+                            "conditions": [
+                                {
+                                    "condition operator": ">",
+                                    "condition value": "0"
+                                },
+                                {
+                                    "condition operator": "<",
+                                    "condition value": "99"
+                                }
+                            ]
+                        }
+                        
+                    ],
+                    "high score": "3",
+                    "mid score": "2",
+                    "low score": "1"
+                },
+                {
+                    "test": "Time per request",
+                    "category": "comparison",
+                    "conditions": [
+                        {
+                            "condition category": "low",
+                            "conditions": [
+                                {
+                                    "condition operator": ">=",
+                                    "condition value": "0.9"
+                                }
+                            ]
+                            
+                        },
+                        {
+                            "condition category": "mid",
+                            "conditions": [
+                                {
+                                    "condition operator": ">",
+                                    "condition value": "0.6"
+                                },
+                                {
+                                    "condition operator": "<",
+                                    "condition value": "0.8"
+                                }
+                            ]
+                        },
+                        {
+                            "condition category": "high",
+                            "conditions": [
+                                {
+                                    "condition operator": "<",
+                                    "condition value": "0.5"
+                                },
+                                {
+                                    "condition operator": "<",
+                                    "condition value": "99"
+                                }
+                            ]
+                        }
+                        
+                    ],
+                    "high score": "3",
+                    "mid score": "2",
+                    "low score": "1"
+                }
+            ],
+            "total_score": "7"
+        },
+        {
+            "category": "Resilience",
+            "evaluation": "Backup service performance",
+            "test cases": "2",
+            "tests": [
+                {
+                    "test": "Backup service reachability",
+                    "category": "fixed value",
+                    "best case": "3",
+                    "worst case": "0"
+                },
+                {
+                    "test": "QoS of backup service",
+                    "category": "fixed value",
+                    "mid cases": "7",
+                    "mid score": "0"
+                }
+            ],
+            "total_score": "10"
+        },
+        {
+            "category": "Dependability",
+            "evaluation": "Avg Trust of Subscribe Services",
+            "test cases": "1",
+            "tests": [
+                {
+                    "test": "Ave Trust of subscribe services",
+                    "category": "Calculated",
+                    "operation" : "avg"
+                }
+            ],
+            "total_score": ""
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+FROM python:3.8-alpine
+
+ENV app /app
+
+RUN mkdir $app
+WORKDIR $app
+COPY . $app
+
+RUN pip install --upgrade pip wheel
+RUN pip install -r requirements.txt
+
+WORKDIR API/
+EXPOSE 9000
+ENTRYPOINT [ "python", "./app.py"]

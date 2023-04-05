@@ -1,0 +1,25 @@
+{
+    "org_code": "TORG_2",
+    "DT_code" : "DT_1",
+    "DT_name": "test_DT_Name",
+    "DT_Description": "test_DT_description",
+    "domain": "http://api.plos.org",
+    "secondry_domain": "",
+    "APIs": [
+        {
+            "URL": "/search?q=title:DNA",
+            "Description": "test desc1",
+            "Type": "GET",
+            "Sample_json": {},
+            "User_auth_token": "auth token"
+        },
+        {
+            "URL": "/search?q=title:%22Drosophila%22%20and%20body:%22RNA%22&fl=id,abstract",
+            "Description": "test desc1",
+            "Type": "GET",
+            "Sample_json": {},
+            "User_auth_token": "auth token"
+        }
+        
+    ]
+}

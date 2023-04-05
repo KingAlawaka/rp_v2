@@ -1,0 +1,42 @@
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=123456 -e POSTGRES_HOST_AUTH_METHOD=trust -d -it --name pg postgres
+
+docker run -p 5555:80 --name pgadmin -e PGADMIN_DEFAULT_EMAIL="admin@dttsa.com" -e PGADMIN_DEFAULT_PASSWORD="123456" -d -it dpage/pgadmin4
+
+use localhost:5555 to login to pgadmin
+
+To create a server get the IP address of pg container 
+docker inspect pg | grep IPAddress
+username: postgres
+password: 123456 (as specify in the docker command)
+
+create a db call dttsa_db
+
+create tables using db_structure.txt
+
+docker pull mongo
+docker run --name astra-mongo -d mongo
+
+git clone https://github.com/flipkart-incubator/Astra.git
+cd Astra
+docker build -t astra .
+docker run --rm -it -d --link astra-mongo:mongo -p 8094:8094 --name astra-server  astra
+
+pip install -r requirements.txt
+
+for mac:
+brew install postgresql
+and try pip3 install psycopg2-binary
+
+otherwise
+brew install libpq --build-from-source
+brew install openssl
+
+export LDFLAGS="-L/opt/homebrew/opt/openssl@1.1/lib -L/opt/homebrew/opt/libpq/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/openssl@1.1/include -I/opt/homebrew/opt/libpq/include"
+
+pip3 install psycopg2
+
+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
+
+
+

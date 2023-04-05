@@ -1,0 +1,238 @@
+create table organization_tbl
+(
+	id serial,
+	org_name varchar(50),
+	org_code varchar(10),
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+insert into organization_tbl (org_name,org_code) values ('Organization 1', 'ORG_1');
+
+create table user_tbl
+(
+	id serial,
+	username varchar(20),
+	password varchar(50),
+	org_code varchar(10),
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table API_tbl
+(
+	id serial,
+	DT_ID int,
+	URL varchar(300),
+	description text,
+	type varchar(10),
+	sample_json text,
+	user_auth_token text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table DT_tbl
+(
+	id serial,
+	org_code varchar(50),
+	DT_code varchar(50),
+	DT_name varchar(50),
+	DT_description text,
+	DT_IP text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table api_security_check_tbl
+(
+	id serial,
+	DT_ID int,
+	API_ID int,
+	scan_id varchar(50),
+	low_count int,
+	mid_count int,
+	high_count int,
+	report text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+CREATE TABLE dttsa_evaluation_config_tbl
+(
+    id serial,
+    configuration_json text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table api_qos_tbl
+(
+	id serial,
+	DT_ID int,
+	API_ID int,
+	test_count int,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table api_qos_records_tbl
+(
+	id serial,
+	DT_ID int,
+	API_ID int,
+	start_time varchar(100),
+	end_time varchar (100),
+	test_duration float,
+	req_per_sec_mean float,
+	tot_req float,
+	tot_tested_time float,
+	tot_pass_tests float,
+	time_per_req_min float,
+	time_per_req_mean float,
+	time_per_req_max float,
+	sum_response_time float,
+	tot_failed_reqs float,
+	tot_exception_reqs float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table backup_service_locations_tbl
+(
+	id serial,
+	DT_ID int,
+	IP varchar(100),
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table backup_qos_tbl
+(
+	id serial,
+	DT_ID int,
+	api_id int,
+	test_count int,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table backup_qos_records_tbl
+(
+	id serial,
+	DT_ID int,
+	API_ID int,
+	start_time varchar(100),
+	end_time varchar (100),
+	test_duration float,
+	req_per_sec_mean float,
+	tot_req float,
+	tot_tested_time float,
+	tot_pass_tests float,
+	time_per_req_min float,
+	time_per_req_mean float,
+	time_per_req_max float,
+	sum_response_time float,
+	tot_failed_reqs float,
+	tot_exception_reqs float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table DT_sub_tbl
+(
+	id serial,
+	DT_ID int,
+	Sub_DT_ID int,
+	Sub_API_ID int,
+	URL varchar(300),
+	description text,
+	type varchar(10),
+	sample_json text,
+	user_auth_token text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+--truncate all tables to run 
+--SELECT truncate_tables('postgres');
+CREATE OR REPLACE FUNCTION truncate_tables(username IN VARCHAR) RETURNS void AS $$
+DECLARE
+    statements CURSOR FOR
+        SELECT tablename FROM pg_tables
+        WHERE tableowner = username AND schemaname = 'public';
+BEGIN
+    FOR stmt IN statements LOOP
+        EXECUTE 'TRUNCATE TABLE ' || quote_ident(stmt.tablename) || ' RESTART IDENTITY CASCADE;';
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+create table dt_data_submission_tbl
+(
+	id serial,
+	DT_ID int,
+	sub_dt_id int,
+	data_type text,
+	stdev_value float,
+	min float,
+    max float,
+    avg float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table dt_type_tbl
+(
+	id serial,
+	DT_ID int,
+	dt_type text,
+	dt_type_predict text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table dttsa_execution_status_tbl(
+	id serial,
+	function_name text,
+	execution_status text,
+	msg text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table dttsa_trust_calculations_tbl(
+	id serial,
+	dt_id int,
+	category text,
+	low_count int,
+	mid_count int,
+	high_count int,
+	avg float,
+	dt_type_prediction text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table temp_dttsa_trust_calculations_tbl(
+	id serial,
+	dt_id int,
+	category text,
+	low_count int,
+	mid_count int,
+	high_count int,
+	avg float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table trust_effect_calculation_tbl(
+	id serial,
+	dt_id int,
+	indirect_connected_dt int,
+	hop_count int,
+	trust_effect int,
+	trust_score int,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);

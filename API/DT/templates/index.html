@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+<h3>Organization Code: {{ org_code }}</h2>
+<h3>IP {{ IP }}</h2>
+<h3>DT ID: {{dt_id}}</h2>
+<!-- <p> Evaluation: {{ evaluation }}</p> -->
+<div style="display: none">
+    <canvas id="chart1" width="400" height="400"></canvas>
+    <script>
+        var ctx = document.getElementById("chart1").getContext("2d");
+        var lineChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: {{ labels | safe }},
+        datasets: [
+            {
+                label: "Formula Output",
+                data: {{ values | safe }},
+            fill: false,
+            borderColor: "rgb(75,192,192)",
+            lineTension: 0.5
+                        }
+        ]
+                },
+        options: {
+            responsive: false
+        }
+            });
+    </script>
+</div>
+<div>
+    <canvas id="chart2" width="400" height="400"></canvas>
+    <script>
+        var ctx = document.getElementById("chart2").getContext("2d");
+        var lineChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: {{ labels2 | safe }},
+        datasets: [
+            {
+                label: "Data Sent to Other DTs",
+                data: {{ values2 | safe }},
+            fill: false,
+            borderColor: "rgb(75,192,192)",
+            lineTension: 0.5
+                        }
+        ]
+                },
+        options: {
+            responsive: false
+        }
+            });
+    </script>
+</div>
+<!-- <div>
+    <canvas id="chart2" width="400" height="400"></canvas>
+    <script>
+        var colorArray = [["#FF4000", false], ["#81BEF7", false], ["#5882FA", false],
+        ["#04B404", false], ["#A901DB", false], ["#F5A9BC", false]];
+
+        // The following makes sure you don't use the same color twice for your datasets
+        // var color;
+        // while (true) {
+        //     var test = colorArray[parseInt(Math.random() * 6)];
+        //     if (!test[1]) {
+        //         color = test[0];
+        //         colorArray[colorArray.indexOf(test)][1] = true;
+        //         break;
+        //     }
+        // }
+        console.log(formulaCalValueList);
+        dataList = formulaCalValueList;
+        dataList.forEach(myFunction);
+        console.log(formulaCalValueList);
+        var datasetList = []
+        function myFunction(item, index) {
+        //text += index + ": " + item + "<br>"; 
+            datasetList.push('{"label": "Position "'+ pos[index] +', "data": {{'+ item +' | safe }},"fill": false,"borderColor": '+ colorArray[index] +',lineTension: 0.5}');
+        }
+
+
+
+
+        var ctx = document.getElementById("chart2").getContext("2d");
+
+        var lineChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: {{ formulaCalLabelList | safe }},
+        datasets: datasetList
+                },
+        options: {
+            responsive: false
+        }
+            });
+    </script>
+</div> -->
+
+<h3> QoS Records</h3>
+<table class="table tablesorter " id="">
+    <thead class=" text-primary">
+      <tr>
+        <th class="text-center">
+          DT ID
+        </th>
+        <th>
+          Max response time
+        </th>
+        <!-- <th>
+          Min time per req
+        </th> -->
+        <th>
+          Min response time
+        </th>
+        <!-- <th>
+          Max time per req
+        </th> -->
+        <!-- <th>
+          Avg response time
+        </th> -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in allQoSData %}
+      <tr>
+        <td class="text-center">#{{q[0]}}</td>
+        <td>{{q[1]}}</td>
+        <td>{{q[2]}}</td>
+        <!-- <td>{{q[5]}}</td> -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+<h3>{% block title %} Transaction Records {% endblock %}</h3>
+{% for rec in allTransRecords %}
+<div class='post'>
+    <p>{{ rec['id'] }}</p>
+    <h2>{{ rec['created'] }}</h2>
+    <p>{{ rec['trans'] }}</p>
+</div>
+{% endfor %}
+<h3>Data Records</h3>
+{% for rec in allDataRecords %}
+<div class='post'>
+    <p>{{ rec['id'] }}</p>
+    <p>{{ rec['req_type'] }}</p>
+    <p>{{ rec['DT_ID'] }}</p>
+    <p>{{ rec['API_ID'] }}</p>
+    <p>{{ rec['value'] }}</p>
+    <p>{{ rec['used'] }}</p>
+    <p>{{ rec['created'] }}</p>
+</div>
+{% endfor %}
+<p>{{ name }}</p>
+{% endblock %}
