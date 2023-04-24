@@ -9,7 +9,9 @@ import random
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+st = time.time()
 client = docker.from_env()
+
 
 # print("current docker ps")
 # print(client.containers.list())
@@ -18,7 +20,7 @@ client = docker.from_env()
 # print(client.images.list())
 # imageList = client.images.list()
 
-dttsa_img = 'dttsa-8-12'
+dttsa_img = 'dttsa-12-12-c1'
 dt_img = 'dt-5-12'
 dt_backup = 'dt-backup-5-12'
 
@@ -27,7 +29,7 @@ dttsa_obj = client.containers.get("dttsa")
 dttsa_ip = dttsa_obj.attrs['NetworkSettings']['IPAddress']
 print("DTTSA IP"+ dttsa_ip )
 
-num_of_dts = 15
+num_of_dts = 20
 dts_doc_objs = []
 backup_dts_doc_objs = []
 dt_port = 9100
@@ -36,20 +38,24 @@ sim_completed = False
 iteration_count = 0
 qos_started = False
 dt_type_original = []
-# random.seed(500000000)#50
+
+random_seed = datetime.now().timestamp()
+# random_seed = 50
+random.seed(random_seed)
+
 for i in range(1,num_of_dts+1):
     dt_types = ['n','m','c']
     dt_type = random.choice(dt_types)
     # dt_type = 'n'
-    env_var_list = ["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip)]
+    env_var_list = ["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip),"rand_seed="+str(random_seed)]
     client.containers.run(dt_img,remove=True,detach=True,name='dt_'+str(i),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port "+str(dt_port)+" -db data.db")
     dts_doc_objs.append(client.containers.get("dt_"+str(i)))
     dt_type_original.append(dt_type)
 
 print(dt_type_original)
 
-def runDTBackupDoc(id):
-    #env_var_list = ["dt_type=n","CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip)]
+def runDTBackupDoc(id,dt_type):
+    env_var_list = ["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip)]
     client.containers.run(dt_backup,remove=True,detach=True,name='dt_backup_'+str(id),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port "+str(dt_port)+" -db data.db")
     return client.containers.get("dt_backup_"+str(id))
     backup_dts_doc_objs.append(client.containers.get("dt_backup"+str(id)))
@@ -68,17 +74,17 @@ def settingBackupDTs():
         
         if dt == 'n':
             if v >= 1 and v<=normal_limit:
-                obj = runDTBackupDoc(count)
+                obj = runDTBackupDoc(count,dt)
                 regBackupLocations(obj.attrs['NetworkSettings']['IPAddress'],count)
                 backup_dts_doc_objs.append(obj)
         elif dt == 'c':
             if v >= 1 and v<=changing:
-                obj = runDTBackupDoc(count)
+                obj = runDTBackupDoc(count,dt)
                 regBackupLocations(obj.attrs['NetworkSettings']['IPAddress'],count)
                 backup_dts_doc_objs.append(obj)
         else:
             if v >= 1 and v<=malicious:
-                obj = runDTBackupDoc(count)
+                obj = runDTBackupDoc(count,dt)
                 regBackupLocations(obj.attrs['NetworkSettings']['IPAddress'],count)
                 backup_dts_doc_objs.append(obj)
         count = count + 1
@@ -139,6 +145,9 @@ def simulation():
         response = requests.get(url,verify=False)
         print(response.text)
         scheduler.remove_job("simulation")
+        et = time.time()
+        elapsed_time = et-st
+        print('Execution time:', time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(id="simulation",func=simulation, trigger="interval", seconds=30,)
@@ -159,6 +168,7 @@ except (KeyboardInterrupt, SystemExit):
     
     for dt_obj in backup_dts_doc_objs:
         dt_obj.stop()
+    
 # dt1 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt1',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")
 # dt2 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt2',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")
 #dt3 = client.containers.run('dt-26',remove=True,detach=True,name='dt3',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")

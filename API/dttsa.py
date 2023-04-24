@@ -272,8 +272,9 @@ def DTTypeDetector(l):
             else:
                 return "m"
         else:
+            # TODO all counts are equal can be label as c instead of m
             if l[0] == l[1] == l[2] == 1:
-                return "m"
+                return "c"
             elif l[0] == l[1] == l[2] == 0:
                 return "-"
             elif l[0] == l[1]:
@@ -307,10 +308,11 @@ def dtTypePredictor(l):
             return "c"
         else:
             return "m"
+    # TODO create seperate cases, c=2 as c c=3 as m
     elif c == 2 or c == 3:
         return "c"
     else:
-        return "-"
+        return "m"
 
 @app.route('/eval')
 def evaluation():
@@ -646,6 +648,18 @@ def testqos():
     runQoSTest(test_count)
     msg = {"status" : "QoS Test Started"}, 200
     return msg
+
+@app.route('/setconfigs')
+def setConfigs():
+    if 'astra' in request.args:
+        config['servers']['API_VULNERBILITY_SERVICE_IP'] = request.args.get('astra')
+    ### TODO after setting db try to connect to the correct DB
+    if 'db' in request.args:
+        config['database']['db_ip'] = request.args.get('db')
+    with open ('environment_config.ini','w') as configfile:
+        config.write(configfile)
+    config.read('environment_config.ini')
+    return str(config['servers']['API_VULNERBILITY_SERVICE_IP'])
 
 #runSchedulerJobs()
 

@@ -95,11 +95,12 @@ class APIAnalyzer:
             print("Error: AddAPISecurityCheck")
     
     def checkAPIVulnerbilities(self,DT_ID,API_ID,url,sample_json,type_req):
-        dictToSend = {"appname" : str(DT_ID)+"_"+str(API_ID),"url": url ,"headers": "","body": sample_json,"method": type_req}
+        dictToSend = {"appname" : str(DT_ID)+"_"+str(API_ID),"url": url ,"headers": "","body": sample_json,"method": type_req,"auth_header": "","auth_url": ""}
         jsonObject = jsonify(dictToSend)
         req_url = self.API_vulnerbility_service_IP + '/scan/'
         res = requests.post(req_url, json= dictToSend)
         v = res.json()
+        print(dictToSend)
         if v['status']:
             scan_id = v['status']
             self.addAPISecurityCheck(DT_ID,API_ID,scan_id) #save to api_security_check_tbl

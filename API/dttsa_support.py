@@ -31,6 +31,7 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT truncate_tables('postgres');")
+        cur.execute("SELECT truncate_tables('admin');")
         conn.commit()
         cur.close()
         conn.close()

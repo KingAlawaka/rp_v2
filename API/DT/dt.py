@@ -58,6 +58,13 @@ DTNameList = ['Robotic Arm','Conveyor Belt'] #env
 DTDesList = ['Robotic Arm', 'Conveyor Belt'] #env
 
 #get values from env variables
+if os.environ.get('rand_seed') is None:
+    rand_seed = datetime.now().timestamp()
+    random.seed(rand_seed)
+else:
+    rand_seed = os.environ['rand_seed']
+    random.seed(rand_seed)
+
 if os.environ.get('org_code') is None:
     org_code = organizationList[random.randint(0,5)]
 else:
@@ -111,12 +118,12 @@ else:
 
 #support objects
 dbHelper = DBHelper()
-simHelper = Simulation(num_iterations,num_DTs,CDT_goal,app.config['dt_type'])
+simHelper = Simulation(num_iterations,num_DTs,CDT_goal,app.config['dt_type'],rand_seed)
 numVariables,num_internal_variable,num_external_variable,formula,externalVarLocations = simHelper.generateFormula()
 valueRanges = simHelper.generateRandomValueRanges()
 scheduler = APScheduler()
 scheduler.init_app(app)
-dtLogic = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'])
+dtLogic = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'],rand_seed)
 
 '''
 Get Subscribers list.

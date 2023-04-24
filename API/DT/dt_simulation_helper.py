@@ -2,11 +2,12 @@ import random
 
 
 class Simulation:
-    def __init__(self,num_iterations,num_DTs,CDT_goal,dt_type):
+    def __init__(self,num_iterations,num_DTs,CDT_goal,dt_type,rand_seed):
         self.num_iterations = num_iterations
         self.num_DTs = num_DTs
         self.CDT_goal = CDT_goal
         self.dt_type = dt_type
+        random.seed(rand_seed)
     
     def generateFormula(self):
         numVariables = random.randint(2,int(self.num_DTs/3))

@@ -8,17 +8,18 @@ import pymannkendall as mk
 import pandas as pd
 
 class DTLogic:
-    def __init__(self,dbHelper,num_iterations,num_DTs,CDT_goal,dt_type):
+    def __init__(self,dbHelper,num_iterations,num_DTs,CDT_goal,dt_type,rand_seed):
         self.dbHelper = dbHelper
         self.config = configparser.ConfigParser()
         self.config.read('environment_config.ini')
-        self.simHelper = Simulation(num_iterations,num_DTs,CDT_goal,dt_type)
+        self.simHelper = Simulation(num_iterations,num_DTs,CDT_goal,dt_type,rand_seed)
         self.dt_type = dt_type
         self.num_iterations =num_iterations
         self.num_DTs = num_DTs
         self.CDT_goal = CDT_goal
         self.dt_id = -1
         self.valueRanges = self.simHelper.generateRandomValueRanges()
+        random.seed(rand_seed)
         pass
     
     def setDTID(self,dt_id):

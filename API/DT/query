@@ -71,4 +71,10 @@
 
 --select id,value from data_sent_tbl;
 
-select DT_ID,max(elapsed_time),min(elapsed_time) from qos_tbl GROUP BY DT_ID;
+--select DT_ID,max(elapsed_time),min(elapsed_time) from qos_tbl GROUP BY DT_ID;
+
+--select * from subs_external_tbl where status=1;
+
+--SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';
+
+--select * from data_tbl where value != -111111111.0;
