@@ -86,7 +86,7 @@ else:
     DT_Description = os.environ['dt_desc']
 
 if os.environ.get('dttsa_IP') is None:
-    app.config['DTTSA_IP'] =  "127.0.0.1"#"host.docker.internal"
+    app.config['DTTSA_IP'] =  "https://dttsa-dvi6vsq74a-uc.a.run.app/"#"127.0.0.1"#"host.docker.internal"
 else:
     app.config['DTTSA_IP'] = os.environ['dttsa_IP']
 
@@ -124,6 +124,9 @@ valueRanges = simHelper.generateRandomValueRanges()
 scheduler = APScheduler()
 scheduler.init_app(app)
 dtLogic = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'],rand_seed)
+
+def dttsaURL():
+    return app.config['DTTSA_IP']
 
 '''
 Get Subscribers list.
@@ -231,7 +234,8 @@ def DTreg(GET_in_URL,GET_out_URL,POST_out_URL,POST_in_URL):
         "DT_IP": "http://"+str(app.config['local_IP'])+":" + str(app.config['port']),
         "APIs": api_array}
     jsonObject = jsonify(dictToSend)
-    res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/DTReg', json= dictToSend)
+    # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/DTReg', json= dictToSend)
+    res = requests.post(dttsaURL()+'/DTReg', json= dictToSend)
     return res.text #only get the text part of the response there are more
 
 @app.get('/dtreg')
@@ -248,7 +252,8 @@ def DTregService():
             DT_ID = obj1[0]["DT_ID"]
         )
         dtLogic.setDTID(app.config['DT_ID'])
-        APIs = requests.get('http://'+ app.config['DTTSA_IP'] +':9000/getownapis?dt_id='+str(app.config['DT_ID']))
+        # APIs = requests.get('http://'+ app.config['DTTSA_IP'] +':9000/getownapis?dt_id='+str(app.config['DT_ID']))
+        APIs = requests.get(dttsaURL()+'/getownapis?dt_id='+str(app.config['DT_ID']))
         apiList = APIs.json()['APIs']
 
         for api in apiList:
@@ -300,7 +305,8 @@ based on the DT formula subscribe to external DT APIs for formula calculations
 '''
 @app.route('/subin')
 def recordInternalSub():
-    APIs = requests.get('http://'+ app.config['DTTSA_IP'] +':9000/getapis?dt_id='+str(app.config['DT_ID']))
+    # APIs = requests.get('http://'+ app.config['DTTSA_IP'] +':9000/getapis?dt_id='+str(app.config['DT_ID']))
+    APIs = requests.get(dttsaURL()+'/getapis?dt_id='+str(app.config['DT_ID']))
     
     try:
         apiList = APIs.json()['APIs']
@@ -643,7 +649,8 @@ def sendReportDTTSA():
         "avg": d[5]
     } for d in data]
     payload = {"dt_id": app.config['DT_ID'],"dt_type": app.config['dt_type'], "report": report }
-    res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/report',json= payload)
+    # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/report',json= payload)
+    res = requests.post(dttsaURL() +'/report',json= payload)
     msg = ""
     if res.status_code == 200:
         msg = "DTTSA submitted"
@@ -671,7 +678,8 @@ def sendSubsToDTTSA():
             "req_type": sub[2]
         } for sub in subList]
     payload = {"dt_id": app.config['DT_ID'] , "sublist" : subs}
-    res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/sublist',json= payload)
+    # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/sublist',json= payload)
+    res = requests.post(dttsaURL() +'/sublist',json= payload)
     return make_response(res.text,200)
 
 def waitUntilOtherDTs():
@@ -769,15 +777,21 @@ def runSchedulerJobs():
     scheduler.start()
 
 def start_server(args):
+    #TODO manual port set
     app.config.update(
-        port = args.port
+        port = "9100"
     )
+    # app.config.update(
+    #     port = args.port
+    # )
     runSchedulerJobs()
-    app.run(host='0.0.0.0',port=args.port)
+    app.run(host='0.0.0.0',port=9100)
     
 
 def main(args):
-    dbHelper.createDB(args.db)
+    #TODO manual db name set
+    dbHelper.createDB("data.db")
+    # dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl
     # with open('environment_config.ini','w') as configfile:
@@ -788,8 +802,9 @@ if __name__ == '__main__':
     #TODO remove cmd arguments and set it through env variables
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('-port') #python3 dt.py -port <port>
-    parser.add_argument('-db')
+    #TODO commented out the parameter passing easy cloud deployment
+    # parser.add_argument('-port') #python3 dt.py -port <port>
+    # parser.add_argument('-db')
     # parser.add_argument('-nl')
     args = parser.parse_args()
     main(args)
