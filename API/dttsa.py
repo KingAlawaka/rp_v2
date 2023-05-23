@@ -661,6 +661,10 @@ def setConfigs():
     config.read('environment_config.ini')
     return str(config['servers']['API_VULNERBILITY_SERVICE_IP'])
 
+@app.route('/restart')
+def restartService():
+    os._exit(0)
+
 #runSchedulerJobs()
 
 def start_server(args):

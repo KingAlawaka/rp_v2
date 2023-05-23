@@ -1,0 +1,11 @@
+docker buildx build --platform linux/amd64 -t <> .
+
+gcloud run deploy dttsa --image gcr.io/research-project-341122/dttsa-23-4-2023-v2 --max-instances=1 --port 9000 --region us-central1 --allow-unauthenticated
+
+gcloud run deploy dt-ae-1 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region asia-east1 --allow-unauthenticated
+
+gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated
+
+gcloud run services delete
+
+gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated --update-env-vars "org_code=setCode,dt_name=setName"
