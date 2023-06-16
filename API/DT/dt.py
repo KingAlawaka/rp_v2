@@ -33,7 +33,8 @@ config.read('environment_config.ini')
 hostname = socket.gethostname()
 IPAddress = socket.gethostbyname(hostname)
 localIP = IPAddress
-app.config['local_IP'] = IPAddress
+app.config['service_url'] = "notsetyet.com"
+app.config['local_IP'] = str(app.config['service_url'])
 app.config['DT_ID'] = -1 #initially setting value to -1 to indicate that DT is not yet registered. positive value upon registration
 app.config['backup_IP'] = "" #no initial backup server will be deploy
 app.config['port'] = 9100
@@ -41,15 +42,17 @@ app.config['getinID'] = -1
 app.config['getoutID'] = -1
 app.config['postinID'] = -1
 app.config['postoutID'] = -1
+app.config['dt_type'] = "n"
+app.config['evaluation_msg'] = "n"
+
+
+URL_pattern_regex = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4})')
+#traffic_delay = 1 #delay function to mimic network traffic
+app.config['init_details_setup_state'] = False
 app.config['dt_reg_state'] = False
 app.config['sub_in_state'] = False
 app.config['send_sub_DTTSA_state'] = False
-app.config['dt_type'] = "n"
-app.config['evaluation_msg'] = "n"
 app.config['execution_finished'] = False
-URL_pattern_regex = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4})')
-#traffic_delay = 1 #delay function to mimic network traffic
-
 
 #random DT data generation
 organizationList = ['TORG_1','TORG_2','TORG_3','TORG_4','TORG_5','TORG_6'] #env 
@@ -59,51 +62,64 @@ DTDesList = ['Robotic Arm', 'Conveyor Belt'] #env
 
 #get values from env variables
 if os.environ.get('rand_seed') is None:
-    rand_seed = datetime.now().timestamp()
-    random.seed(rand_seed)
+    app.config['rand_seed'] = datetime.now().timestamp()
 else:
-    rand_seed = os.environ['rand_seed']
-    random.seed(rand_seed)
+    app.config['rand_seed'] = os.environ['rand_seed']
 
 if os.environ.get('org_code') is None:
     org_code = organizationList[random.randint(0,5)]
+    app.config['org_code'] = organizationList[random.randint(0,5)]
 else:
     org_code = os.environ['org_code']
+    app.config['org_code'] = os.environ['org_code']
 
 if os.environ.get('dt_code') is None:
     DT_code = DTIDList[random.randint(0,5)]
+    app.config['dt_code'] = DTIDList[random.randint(0,5)]
 else:
     DT_code = os.environ['dt_code']
+    app.config['dt_code'] = os.environ['dt_code']
 
 if os.environ.get('dt_name') is None:
     DT_name = DTNameList[random.randint(0,1)]
+    app.config['dt_name'] = DTNameList[random.randint(0,1)]
 else:
     DT_name = os.environ['dt_name']
+    app.config['dt_name'] = os.environ['dt_name']
 
 if os.environ.get('dt_desc') is None:
     DT_Description = DTDesList[random.randint(0,1)]
+    app.config['dt_desc'] = DTDesList[random.randint(0,1)]
 else:
     DT_Description = os.environ['dt_desc']
+    app.config['dt_desc'] = os.environ['dt_desc']
 
 if os.environ.get('dttsa_IP') is None:
-    app.config['DTTSA_IP'] =  "https://dttsa-dvi6vsq74a-uc.a.run.app/"#"127.0.0.1"#"host.docker.internal"
+    app.config['DTTSA_IP'] =  "https://dttsa-dvi6vsq74a-uc.a.run.app" #"host.docker.internal"
+    # app.config['DTTSA_IP'] =  "http://127.0.0.1:9000"
 else:
     app.config['DTTSA_IP'] = os.environ['dttsa_IP']
 
 if os.environ.get('num_iterations') is None:
     num_iterations = 15
+    app.config['num_iterations'] = 15
 else:
     num_iterations = int(os.environ['num_iterations'])
+    app.config['num_iterations'] = int(os.environ['num_iterations'])
 
 if os.environ.get('num_dts') is None:
     num_DTs = 12
+    app.config['num_dts'] = 12
 else:
     num_DTs = int(os.environ['num_dts'])
+    app.config['num_dts'] = int(os.environ['num_dts'])
 
 if os.environ.get('CDT_goal') is None:
     CDT_goal = "min"
+    app.config['cdt_goal'] = "min"
 else:
     CDT_goal = os.environ['CDT_goal']
+    app.config['cdt_goal'] = os.environ['CDT_goal']
 
 if os.environ.get('dt_type') is None:
     # n= normal, m= malicious, c=changing
@@ -118,12 +134,12 @@ else:
 
 #support objects
 dbHelper = DBHelper()
-simHelper = Simulation(num_iterations,num_DTs,CDT_goal,app.config['dt_type'],rand_seed)
+simHelper = Simulation(num_iterations,num_DTs,CDT_goal,app.config['dt_type'],app.config['rand_seed'])
 numVariables,num_internal_variable,num_external_variable,formula,externalVarLocations = simHelper.generateFormula()
 valueRanges = simHelper.generateRandomValueRanges()
 scheduler = APScheduler()
 scheduler.init_app(app)
-dtLogic = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'],rand_seed)
+dtLogic = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'],app.config['rand_seed'])
 
 def dttsaURL():
     return app.config['DTTSA_IP']
@@ -231,7 +247,7 @@ def DTreg(GET_in_URL,GET_out_URL,POST_out_URL,POST_in_URL):
         "DT_code" : DT_code,
         "DT_name": DT_name,
         "DT_Description": DT_Description,
-        "DT_IP": "http://"+str(app.config['local_IP'])+":" + str(app.config['port']),
+        "DT_IP": str(app.config['service_url']),
         "APIs": api_array}
     jsonObject = jsonify(dictToSend)
     # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/DTReg', json= dictToSend)
@@ -239,11 +255,11 @@ def DTreg(GET_in_URL,GET_out_URL,POST_out_URL,POST_in_URL):
     return res.text #only get the text part of the response there are more
 
 @app.get('/dtreg')
-def DTregService():
-    GET_in_URL = "http://"+str(app.config['local_IP'])+":" + str(app.config['port']) +"/getvalue/"
-    GET_out_URL = "http://"+str(app.config['local_IP'])+":" + str(app.config['port']) +"/sendvalue"
-    POST_out_URL = "http://"+str(app.config['local_IP'])+":" + str(app.config['port']) +"/sendpost/"
-    POST_in_URL = "http://"+str(app.config['local_IP'])+":" + str(app.config['port']) +"/getpost/"
+def DTregService(): 
+    GET_in_URL = str(app.config['service_url'])+"/getvalue/"
+    GET_out_URL = str(app.config['service_url'])+"/sendvalue"
+    POST_out_URL = str(app.config['service_url'])+"/sendpost/"
+    POST_in_URL = str(app.config['service_url'])+"/getpost/"
     if app.config['DT_ID'] == -1:
         response = DTreg(GET_in_URL,GET_out_URL,POST_out_URL,POST_in_URL)
         obj1 = json.loads(response)
@@ -273,7 +289,7 @@ def DTregService():
                 app.config.update(
                     postinID = api['API_ID']
                 )
-        dbHelper.addDTDetails(app.config['DT_ID'],app.config['dt_type'],"http://"+str(app.config['local_IP'])+":" + str(app.config['port']))
+        dbHelper.addDTDetails(app.config['DT_ID'],app.config['dt_type'],str(app.config['service_url']))
     else:
         response = {"DT_ID": "All ready registed","status": "Failed"},400
     return response
@@ -310,22 +326,28 @@ def recordInternalSub():
     
     try:
         apiList = APIs.json()['APIs']
-        
+        print(apiList)
+        print(externalVarLocations)
         for varLocation in externalVarLocations:
             
             selectedIndex = random.choice(apiList)
             dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation)
-            temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
+            #TODO local env use IPs and using a regex IP extracted. cloud env need full
+            # temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
+            sub_dt_url = URL_pattern_regex.search(selectedIndex['URL'])[0]
+            print(sub_dt_url)
             if selectedIndex['type'] == 'POST':
-                url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port']) +"/getpost/"
+                url = str(app.config['service_url']) +"/getpost/"
             else:
                 url = selectedIndex['URL']
-            
-            res = requests.get('http://'+ temp_DT_IP +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+"http://"+str(app.config['local_IP'])+":" + str(app.config['port']))
-            
+            # print('http://'+ temp_DT_IP +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+            # res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+            res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+
         res = {"msg": "Sucess"}
         return make_response(res,200)
     except Exception as e:
+        print(e)
         res = {"msg": "No APIs yet"}
         return make_response(res,400)
 
@@ -451,7 +473,7 @@ def index():
     labels2 = [row[0] for row in data2]
     values2 = [row[1] for row in data2]
 
-    return render_template('index.html',allQoSData=allQoSData,labels2=labels2,values2=values2,evaluation=app.config['evaluation_msg'],labels=labels,values=values,allDataRecords=allDataRecords, allTransRecords=allTransRecords,org_code=org_code,IP=app.config['local_IP'],dt_id=app.config['DT_ID'])
+    return render_template('index.html',allQoSData=allQoSData,labels2=labels2,values2=values2,evaluation=app.config['evaluation_msg'],labels=labels,values=values,allDataRecords=allDataRecords, allTransRecords=allTransRecords,org_code=org_code,IP= app.config['service_url'],dt_id=app.config['DT_ID'])
 
 '''
 Display DT details
@@ -465,7 +487,7 @@ def details():
         'DT_name' : DT_name,
         'DT_Description' : DT_Description,
         'DT_ID':app.config['DT_ID'],
-        'DT_IP': "http://"+str(app.config['local_IP'])+":" + str(app.config['port']),
+        'DT_IP': app.config['service_url'],
         'DTTSA_IP': app.config['DTTSA_IP'],
         'num_iterations' : num_iterations,
         'num_DTs': num_DTs,
@@ -496,7 +518,6 @@ def setvalue():
         'POST_IN':app.config['postinID'],
         'POST_OUT':app.config['postoutID']
     })
-
 
 
 '''
@@ -576,7 +597,7 @@ def postother():
     
     jsonObj = jsonify(msgToSend)
     headers = {'access-token':'test val'}
-    url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])+"/getpost/"
+    url = str(app.config['service_url'])+"/getpost/"
     
     rest = requests.post(url,json=msgToSend,headers=headers)
     payload = {"status" : "success"}
@@ -599,7 +620,7 @@ def getvalue():
     if dtLogic.delayResponse():
         sleep(dtLogic.delayTime())
     
-    getServiceURL = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])+"/sendvalue"
+    getServiceURL = str(app.config['service_url'])+"/sendvalue"
     res = requests.get(getServiceURL)
     
     payload = res.text
@@ -691,7 +712,7 @@ def waitUntilOtherDTs():
             scheduler.remove_job("waitUntilOtherDTs")
             print("CSVs saved")
     else:
-        url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])
+        url = str(app.config['service_url'])
         res = requests.get(url+"/sendothers")
 
 '''
@@ -699,10 +720,10 @@ Main DT simulation logic
 '''
 def DTSimulation():
     print("DT Simulation Started")
-    url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])
+    url = str(app.config['service_url'])
     res = requests.get(url+"/cal")
     
-    url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])
+    url = str(app.config['service_url'])
     res = requests.get(url+"/sendothers")
     
     rows = dbHelper.getFormulaCalTbl()
@@ -731,42 +752,106 @@ def saveCSV():
     return res
 
 
+@app.route('/restart')
+def restartService():
+    os._exit(0)
+
+'''
+Initial DT setup
+["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip),"rand_seed="+str(random_seed)]
+'''
+@app.post("/setup")
+def initDTSetup():
+    content = request.get_json()
+    try:
+        # dt_type = content['dt_type']
+        # cdt_goal = content['cdt_goal']
+        # num_dts = content['num_dts']
+        # num_iterations = content['num_iterations']
+        # rand_seed = content['rand_seed']
+        service_url = content['url']
+        dttsa_url = content['dttsa_url']
+        
+        app.config.update(
+            service_url = service_url
+        )
+
+        app.config.update(
+            DTTSA_IP = dttsa_url
+        )
+
+        # app.config.update(
+        #     rand_seed = rand_seed
+        # )
+
+        
+        #TODO only main parameters are set. others are not that important in this phase.
+        # app.config['rand_seed']
+        # app.config['org_code']
+        # app.config['dt_code']
+        # app.config['dt_name']
+        # app.config['dt_desc']
+        # app.config['num_iterations']
+        # app.config['num_dts']
+        # app.config['cdt_goal']
+        # app.config['dt_type']
+
+        random.seed(app.config['rand_seed'])
+
+        msg = {"status": "Done", "service url" : app.config['service_url'], "dttsa_url": app.config['DTTSA_IP'] }
+
+        app.config.update(
+            init_details_setup_state = True
+        )
+
+    except:
+        msg = {"status": "Failed"}
+        payload = msg
+        res = make_response(jsonify(payload),406)
+        res = dtLogic.createResponseHeaders(res)
+        return msg
+    
+    return msg
+
 
 '''
 DT startup process
 '''
 def DTStart():
     print("DTStarted")
-    print("DT type: "+ str(app.config['dt_type']))
-    url = "http://"+str(app.config['local_IP'])+":" + str(app.config['port'])
-    if app.config['dt_reg_state'] == False:
-        res = requests.get(url+"/dtreg")
-        if res.status_code == 200:
-            app.config.update(
-                dt_reg_state = True
-            )
 
-    if app.config['dt_reg_state'] == True and app.config['sub_in_state'] == False:
-        res = requests.get(url+"/subin")
-        if res.status_code == 200:
-            app.config.update(
-                sub_in_state = True
-            )
+    if app.config['init_details_setup_state'] != False:
+        print("DT type: "+ str(app.config['dt_type']))
+        url = str(app.config['service_url'])
+        if app.config['dt_reg_state'] == False:
+            res = requests.get(url+"/dtreg")
+            if res.status_code == 200:
+                app.config.update(
+                    dt_reg_state = True
+                )
 
-    if app.config['dt_reg_state'] == True and app.config['sub_in_state'] == True and app.config['send_sub_DTTSA_state'] == False:
-        res = requests.get(url+"/sendsubs")
-        if res.status_code == 200:
-            app.config.update(
-                send_sub_DTTSA_state = True
-            )
+        if app.config['dt_reg_state'] == True and app.config['sub_in_state'] == False:
+            res = requests.get(url+"/subin")
+            if res.status_code == 200:
+                app.config.update(
+                    sub_in_state = True
+                )
 
-    if app.config['dt_reg_state'] and app.config['sub_in_state'] and app.config['send_sub_DTTSA_state']:
-        scheduler.remove_job("DTStart")
-        print("DT start job removed")
-        timeInterval = random.randint(5,10)
-        print("time interval: "+ str(timeInterval))
-        scheduler.add_job(id="DTSimulation", replace_existing=True, func=DTSimulation,trigger="interval",seconds = timeInterval)
+        if app.config['dt_reg_state'] == True and app.config['sub_in_state'] == True and app.config['send_sub_DTTSA_state'] == False:
+            res = requests.get(url+"/sendsubs")
+            if res.status_code == 200:
+                app.config.update(
+                    send_sub_DTTSA_state = True
+                )
 
+        if app.config['dt_reg_state'] and app.config['sub_in_state'] and app.config['send_sub_DTTSA_state']:
+            scheduler.remove_job("DTStart")
+            print("DT start job removed")
+            timeInterval = random.randint(5,10)
+            print("time interval: "+ str(timeInterval))
+            scheduler.add_job(id="DTSimulation", replace_existing=True, func=DTSimulation,trigger="interval",seconds = timeInterval)
+    else:
+        print("Waiting for initial DT setup")
 
 def runSchedulerJobs():
     print("SchedularJobs Initiated")
@@ -790,7 +875,7 @@ def start_server(args):
 
 def main(args):
     #TODO manual db name set
-    dbHelper.createDB("data.db")
+    dbHelper.createDB("data1.db")
     # dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl

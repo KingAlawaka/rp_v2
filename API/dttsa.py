@@ -33,6 +33,7 @@ import numpy as np
 import os
 import io
 import random
+import json
 
 
 app = Flask(__name__,template_folder="../Dashboardnew/templates", static_folder="../Dashboardnew/static")
@@ -44,7 +45,7 @@ scheduler.init_app(app)
 
 config = configparser.ConfigParser()
 config.read('environment_config.ini')
-API_vulnerbility_service_IP = config['servers']['API_VULNERBILITY_SERVICE_IP']
+API_vulnerbility_service_URL = config['servers']['API_VULNERBILITY_SERVICE_URL']
 
 
 dbCon = DBConnection()
@@ -473,10 +474,6 @@ def evaluation():
     # print(final_results)
     return "okay"
         
-
-        
-
-
 @app.route('/logout')
 def logout():
     session.pop('username',None)
@@ -652,24 +649,38 @@ def testqos():
 @app.route('/setconfigs')
 def setConfigs():
     if 'astra' in request.args:
-        config['servers']['API_VULNERBILITY_SERVICE_IP'] = request.args.get('astra')
+        config['servers']['API_VULNERBILITY_SERVICE_URL'] = request.args.get('astra')
     ### TODO after setting db try to connect to the correct DB
     if 'db' in request.args:
         config['database']['db_ip'] = request.args.get('db')
     with open ('environment_config.ini','w') as configfile:
         config.write(configfile)
+    dttsaSupportServices.clearDB()
     config.read('environment_config.ini')
-    return str(config['servers']['API_VULNERBILITY_SERVICE_IP'])
+    return str(config['servers']['API_VULNERBILITY_SERVICE_URL'])
 
 @app.route('/restart')
 def restartService():
     os._exit(0)
 
+@app.route('/dttsa_details')
+def DTTSAStatus():
+    config.read('environment_config.ini')
+    return json.dumps({
+        'astra' : str(config['servers']['API_VULNERBILITY_SERVICE_URL']),
+        'db' : str(config['database']['db_ip'])
+    })
+
 #runSchedulerJobs()
+
+@app.route('/dttsa_start')
+def startDTTSA():
+    runSchedulerJobs()
+    return "Success"
 
 def start_server(args):
     #app.config['test_arg_value'] = args.a
-    runSchedulerJobs()
+    # runSchedulerJobs()
     app.run(host='0.0.0.0',port=9000,use_reloader=False) #use_reloader = True support hot reloading but scheduler will run twice
 
 def main(args):

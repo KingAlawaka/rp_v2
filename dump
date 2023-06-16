@@ -33,3 +33,12 @@ calculate trust score
 '3': {'3': ['3'], '1': ['3', '1'], '4': ['3', '1', '4'], '2': ['3', '1', '4', '2']}, 
 '5': {'5': ['5'], '2': ['5', '2'], '4': ['5', '4'], '1': ['5', '2', '1']}}
 
+app.config['rand_seed']
+app.config['org_code']
+app.config['dt_code']
+app.config['dt_name']
+app.config['dt_desc']
+app.config['num_iterations']
+app.config['num_dts']
+app.config['cdt_goal']
+app.config['dt_type']

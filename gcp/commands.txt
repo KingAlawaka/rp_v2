@@ -1,11 +1,33 @@
-docker buildx build --platform linux/amd64 -t <> .
+docker buildx build . --platform linux/amd64 -t <>
+docker tag <d name> kingalawaka/<d name>
+docker push kingalawaka/<d name>
 
-gcloud run deploy dttsa --image gcr.io/research-project-341122/dttsa-23-4-2023-v2 --max-instances=1 --port 9000 --region us-central1 --allow-unauthenticated
+docker tag <img> gcr.io/research-project-341122/<img>
+gcloud docker -- push gcr.io/research-project-341122/<img>
 
-gcloud run deploy dt-ae-1 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region asia-east1 --allow-unauthenticated
+gcloud run deploy dttsa --image gcr.io/research-project-341122/dttsa-25-5-2023 --max-instances=1 --port 9000 --region us-central1 --allow-unauthenticated
 
-gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated
+gcloud run deploy dt-ae-1 --image gcr.io/research-project-341122/dt-25-5-23 --max-instances=1 --port 9100 --region asia-east1 --allow-unauthenticated --update-env-vars "org_code=setCode,dt_name=setName,dttsa_IP=https://dttsa-dvi6vsq74a-uc.a.run.app/"
+
+gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-25-5-23 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated
 
 gcloud run services delete
 
 gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-18-5-23-v3 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated --update-env-vars "org_code=setCode,dt_name=setName"
+
+gcloud run deploy dt-us-2 --image gcr.io/research-project-341122/dt-28-5-23 --max-instances=1 --port 9100 --region us-central1 --allow-unauthenticated --update-env-vars "org_code=setCode,dt_name=setName,dttsa_IP=https://dttsa-dvi6vsq74a-uc.a.run.app/"
+
+gcloud run deploy dt-ae-1 --image gcr.io/research-project-341122/dt-28-5-23 --max-instances=1 --port 9100 --region asia-east1 --allow-unauthenticated --update-env-vars "org_code=setCode,dt_name=setName,dttsa_IP=https://dttsa-dvi6vsq74a-uc.a.run.app/"
+
+docker run -d -it --rm --name dt2 -p 9002:9100 --env dttsa_IP=http://34.173.74.160:9000 kingalawaka/dt-25-5-23
+
+docker run -d -it --restart always --name dttsa -p 9000:9000 kingalawaka/dttsa-25-5-23
+
+dttsa server 
+delete all but keep /csv/save folder content
+find ./csv -mindepth 1 ! -regex '^./csv/save\(/.*\)?' -delete
+
+zip -r myarchive.zip dir1 -x dir1/ignoreDir1/**\* dir1/ignoreDir2/**\*
+zip -r s13.zip . -x save/**\*
+
+cd csv ls

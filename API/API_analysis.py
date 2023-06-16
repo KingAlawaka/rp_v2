@@ -16,11 +16,10 @@ import configparser
 
 class APIAnalyzer:
     def __init__(self):
-        config = configparser.ConfigParser()
-        config.read('environment_config.ini')
+        
+        
         #print(config['database']['DB_IP'])
         self.dbConnection = DBConnection()
-        self.API_vulnerbility_service_IP = config['servers']['API_VULNERBILITY_SERVICE_IP']
 
     # def get_db_connection(self):
     #     conn = psycopg2.connect(host=self.DB_IP,database=self.DB_name,user=self.DB_user,password=self.DB_password)
@@ -49,10 +48,13 @@ class APIAnalyzer:
         mid_count = 0
         high_count =0
         self.addAPIExecutionStatus("API","Running","APis remaning"+str(len(APIs)))
+        config = configparser.ConfigParser()
+        config.read('environment_config.ini')
+        API_vulnerbility_service_url = config['servers']['API_VULNERBILITY_SERVICE_URL']
         for api in APIs:
             #TODO uncomment this print
             print("API ", api[3])
-            req_url = self.API_vulnerbility_service_IP + '/alerts/'+api[3]
+            req_url = API_vulnerbility_service_url + '/alerts/'+api[3]
             res = requests.get(req_url)
             res.raise_for_status()
             apiObj = res.json()
@@ -97,7 +99,10 @@ class APIAnalyzer:
     def checkAPIVulnerbilities(self,DT_ID,API_ID,url,sample_json,type_req):
         dictToSend = {"appname" : str(DT_ID)+"_"+str(API_ID),"url": url ,"headers": "","body": sample_json,"method": type_req,"auth_header": "","auth_url": ""}
         jsonObject = jsonify(dictToSend)
-        req_url = self.API_vulnerbility_service_IP + '/scan/'
+        config = configparser.ConfigParser()
+        config.read('environment_config.ini')
+        API_vulnerbility_service_url = config['servers']['API_VULNERBILITY_SERVICE_URL']
+        req_url = API_vulnerbility_service_url+ '/scan/'
         res = requests.post(req_url, json= dictToSend)
         v = res.json()
         print(dictToSend)

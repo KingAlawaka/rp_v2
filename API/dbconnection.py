@@ -16,7 +16,14 @@ class DBConnection:
         self.DB_password = config['database']['DB_PASSWORD']
 
     def get_db_connection(self):
-        conn = psycopg2.connect(host=self.DB_IP,database=self.DB_name,user=self.DB_user,password=self.DB_password)
+        config = configparser.ConfigParser()
+        config.read('environment_config.ini')
+        #print(config['database']['DB_IP'])
+        DB_IP = config['database']['DB_IP']
+        DB_name = config['database']['DB_NAME']
+        DB_user = config['database']['DB_USER']
+        DB_password = config['database']['DB_PASSWORD']
+        conn = psycopg2.connect(host=DB_IP,database=DB_name,user=DB_user,password=DB_password)
         return conn
 
     def db_connect(self):

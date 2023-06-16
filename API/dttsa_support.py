@@ -24,8 +24,8 @@ class DTTSASupportServices:
         config.read('environment_config.ini')
         #print(config['database']['DB_IP'])
         self.dbConnection = DBConnection()
-        self.API_vulnerbility_service_IP = config['servers']['API_VULNERBILITY_SERVICE_IP']
-        self.clearDB()
+        # self.API_vulnerbility_service_IP = config['servers']['API_VULNERBILITY_SERVICE_IP']
+        # self.clearDB()
 
     def clearDB(self):
         conn = self.dbConnection.get_db_connection()
