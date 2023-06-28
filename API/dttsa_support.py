@@ -52,6 +52,15 @@ class DTTSASupportServices:
         cur.close()
         conn.close()
 
+    def getDTType(self,dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from dt_type_tbl where DT_ID= %s;',(dt_id,))
+        dt_type = cur.fetchall()
+        cur.close()
+        conn.close()
+        return dt_type
+
     def getUser(self,username,org_code):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
@@ -145,6 +154,14 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         cur.execute('select id from dt_tbl;')
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getDTDetails(self,dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from dt_tbl where id = %s;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records

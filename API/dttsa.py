@@ -366,6 +366,7 @@ def evaluation():
                 mid_count = mid_count+1
             else:
                 high_count = high_count +1
+        
         qos_counts = [low_count,mid_count,high_count]
         weighted_avg = weightedAvg(low_count,mid_count,high_count)
         temp_results = [dt[0],qos_counts,weighted_avg,DTTypeDetector(qos_counts)]
@@ -424,6 +425,8 @@ def evaluation():
         weighted_avg = weightedAvg(low_count,mid_count,high_count)
         temp_results = [dt[0],value_counts,weighted_avg,DTTypeDetector(value_counts)]
         dttsaSupportServices.recordTrustScores(dt[0],"DT Values",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
+        #TODO goal analysis use the same value analysis
+        dttsaSupportServices.recordTrustScores(dt[0],"Goal Analysis",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
         val_results.append(temp_results)
         low_count = 0
         mid_count = 0
@@ -450,15 +453,25 @@ def evaluation():
         dttsaSupportServices.recordTrustScores(res[0],"API Security",res[1],res[2],res[3],weighted_avg,APIDTTypeDetector(weighted_avg))
     
     # records = dttsaSupportServices.getDTtypePredictions()
-    
+    print("called")
+    # print(dts)
     for dt in dts:
+        # print(dt)
         records = dttsaSupportServices.getDTtypePredictions(dt[0])
         res = []
         for r in records:
             res.append(r[1])
         print(res)
         predicted_type = dtTypePredictor(res)
-        dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        print("Dt ID" , str(dt[0]))
+        type_record = dttsaSupportServices.getDTType(dt[0])
+        print("type record", str(len(type_record)))
+        if (len(type_record) != 1 ):
+            assigned_dt_type = getDTType(dt[0])
+            dttsaSupportServices.addDTType(dt[0],assigned_dt_type)
+            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        else:
+            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
 
     print("___")
     print(qos_results)
@@ -473,6 +486,18 @@ def evaluation():
     print("___")
     # print(final_results)
     return "okay"
+
+def getDTType(dt_id):
+    dt_details = dttsaSupportServices.getDTDetails(dt_id)
+    print("DT_url len ", str(len(dt_details)))
+    if len(dt_details) > 0:
+        print("DT_url ", dt_details[0][5])
+        dt_url = dt_details[0][5]+"/details"
+        r = requests.get(dt_url,verify=False)
+        data = json.loads(r.text)
+        print(data['dt_type'])
+        return data['dt_type']
+
         
 @app.route('/logout')
 def logout():
@@ -667,6 +692,7 @@ def restartService():
 def DTTSAStatus():
     config.read('environment_config.ini')
     return json.dumps({
+        'version' : "v4",
         'astra' : str(config['servers']['API_VULNERBILITY_SERVICE_URL']),
         'db' : str(config['database']['db_ip'])
     })

@@ -25,9 +25,21 @@ docker run -d -it --restart always --name dttsa -p 9000:9000 kingalawaka/dttsa-2
 
 dttsa server 
 delete all but keep /csv/save folder content
-find ./csv -mindepth 1 ! -regex '^./csv/save\(/.*\)?' -delete
+sudo find . -mindepth 1 ! -regex '^./csv/save\(/.*\)?' -delete
 
 zip -r myarchive.zip dir1 -x dir1/ignoreDir1/**\* dir1/ignoreDir2/**\*
-zip -r s13.zip . -x save/**\*
+sudo zip -r d25.zip . -x save/**\*
 
 cd csv ls
+
+select * from dt_type_tbl order by dt_id asc;
+
+select count(id) from dttsa_trust_calculations_tbl group by dt_id;
+
+select * from dttsa_trust_calculations_tbl where dt_id = 11;
+
+select * from dt_tbl;
+
+select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished';
+
+select * from api_qos_records_tbl where dt_id = 11;

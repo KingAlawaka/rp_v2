@@ -458,7 +458,7 @@ class TestAPI:
         return resp
 
 class QoSTest:
-    def __init__(self,concurrent_users=10,loop_times=50,test_time=3600,stats_interval=5,ramp_up=0):
+    def __init__(self,concurrent_users=10,loop_times=5,test_time=3600,stats_interval=5,ramp_up=0):
         self.concurrent_users=concurrent_users
         self.loop_times=loop_times
         self.test_time=test_time
