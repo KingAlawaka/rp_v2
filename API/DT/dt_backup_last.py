@@ -783,6 +783,10 @@ def initDTSetup():
         app.config.update(
             dt_type = dt_type
         )
+        
+        # app.config.update(
+        #     rand_seed = rand_seed
+        # )
 
         
         #TODO only main parameters are set. others are not that important in this phase.
@@ -796,9 +800,9 @@ def initDTSetup():
         # app.config['cdt_goal']
         # app.config['dt_type']
 
-        #random.seed(app.config['rand_seed'])
+        random.seed(app.config['rand_seed'])
 
-        msg = {"status": "Done", "service url" : app.config['service_url'], "dttsa_url": app.config['DTTSA_IP'], "dt_type": app.config['dt_type']  }
+        msg = {"status": "Done", "service url" : app.config['service_url'], "dttsa_url": app.config['DTTSA_IP'] }
 
         app.config.update(
             init_details_setup_state = True
@@ -869,7 +873,6 @@ def start_server(args):
     # app.config.update(
     #     port = args.port
     # )
-    # random.seed(app.config['rand_seed'])
     runSchedulerJobs()
     app.run(host='0.0.0.0',port=9100)
     

@@ -43,3 +43,7 @@ select * from dt_tbl;
 select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished';
 
 select * from api_qos_records_tbl where dt_id = 11;
+
+select * from dttsa_execution_status_tbl where function_name='QoS'
+
+docker run -d -it  --name test-dt -p 9100:9100 --env dttsa_IP=http://34.173.74.160:9000 --env rand_seed=123456789 dt

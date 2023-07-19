@@ -358,20 +358,23 @@ def evaluation():
         values_data = dttsaSupportServices.getDTDataByType(dt[0],"Values")
         values_qos_dttsa = dttsaSupportServices.getDTTSAQoSValues(dt[0])
         values_backup_qos = dttsaSupportServices.getDTTSABackupQoSValues(dt[0])
-        for v in values_qos:
-            val = round(float(v[7]),1)
-            if val <= qos_low:
-                low_count = low_count+1
-            elif val >= qos_mid and val <= qos_high:
-                mid_count = mid_count+1
-            else:
-                high_count = high_count +1
-        
-        qos_counts = [low_count,mid_count,high_count]
-        weighted_avg = weightedAvg(low_count,mid_count,high_count)
-        temp_results = [dt[0],qos_counts,weighted_avg,DTTypeDetector(qos_counts)]
-        dttsaSupportServices.recordTrustScores(dt[0],"DT QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(qos_counts))
-        qos_results.append(temp_results)
+
+        #TODO check for QoS on DT level
+        if len(values_qos) != 0:
+            for v in values_qos:
+                val = round(float(v[7]),1)
+                if val <= qos_low:
+                    low_count = low_count+1
+                elif val >= qos_mid and val <= qos_high:
+                    mid_count = mid_count+1
+                else:
+                    high_count = high_count +1
+            
+            qos_counts = [low_count,mid_count,high_count]
+            weighted_avg = weightedAvg(low_count,mid_count,high_count)
+            temp_results = [dt[0],qos_counts,weighted_avg,DTTypeDetector(qos_counts)]
+            dttsaSupportServices.recordTrustScores(dt[0],"DT QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(qos_counts))
+            qos_results.append(temp_results)
         low_count = 0
         mid_count = 0
         high_count = 0
@@ -406,28 +409,35 @@ def evaluation():
                     high_count = high_count +1
             dttsa_qos_counts = [low_count,mid_count,high_count]
             weighted_avg = weightedAvg(low_count,mid_count,high_count)
-            temp_results = [dt[0],dttsa_qos_counts,weighted_avg,DTTypeDetector(dttsa_qos_counts)]
-            dttsaSupportServices.recordTrustScores(dt[0],"Backup QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(dttsa_qos_counts))
+            #TODO if there is a backup QoS prediction, give a lower prediction because not all DTs have a backup.
+            backup_qos_type_predict = DTTypeDetector(dttsa_qos_counts)
+            if backup_qos_type_predict == "m":
+                backup_qos_type_predict = "c"
+            elif backup_qos_type_predict == "c":
+                backup_qos_type_predict = "n"
+            temp_results = [dt[0],dttsa_qos_counts,weighted_avg,backup_qos_type_predict]
+            dttsaSupportServices.recordTrustScores(dt[0],"Backup QoS",low_count,mid_count,high_count,weighted_avg,backup_qos_type_predict)
             dttsa_backup_qos_results.append(temp_results)
             low_count = 0
             mid_count = 0
             high_count = 0
-
-        for v in values_data:
-            val = round(float(v[4]),1)
-            if val <= value_low:
-                low_count = low_count+1
-            elif val >= value_mid and val <= value_high:
-                mid_count = mid_count+1
-            else:
-                high_count = high_count +1
-        value_counts = [low_count,mid_count,high_count]
-        weighted_avg = weightedAvg(low_count,mid_count,high_count)
-        temp_results = [dt[0],value_counts,weighted_avg,DTTypeDetector(value_counts)]
-        dttsaSupportServices.recordTrustScores(dt[0],"DT Values",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
-        #TODO goal analysis use the same value analysis
-        dttsaSupportServices.recordTrustScores(dt[0],"Goal Analysis",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
-        val_results.append(temp_results)
+        #TODO check for data availability on DT level value analysis
+        if len(values_data) != 0:
+            for v in values_data:
+                val = round(float(v[4]),1)
+                if val <= value_low:
+                    low_count = low_count+1
+                elif val >= value_mid and val <= value_high:
+                    mid_count = mid_count+1
+                else:
+                    high_count = high_count +1
+            value_counts = [low_count,mid_count,high_count]
+            weighted_avg = weightedAvg(low_count,mid_count,high_count)
+            temp_results = [dt[0],value_counts,weighted_avg,DTTypeDetector(value_counts)]
+            dttsaSupportServices.recordTrustScores(dt[0],"DT Values",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
+            #TODO goal analysis use the same value analysis
+            # dttsaSupportServices.recordTrustScores(dt[0],"Goal Analysis",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(value_counts))
+            val_results.append(temp_results)
         low_count = 0
         mid_count = 0
         high_count = 0
@@ -463,15 +473,15 @@ def evaluation():
             res.append(r[1])
         print(res)
         predicted_type = dtTypePredictor(res)
-        print("Dt ID" , str(dt[0]))
-        type_record = dttsaSupportServices.getDTType(dt[0])
-        print("type record", str(len(type_record)))
-        if (len(type_record) != 1 ):
-            assigned_dt_type = getDTType(dt[0])
-            dttsaSupportServices.addDTType(dt[0],assigned_dt_type)
-            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
-        else:
-            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        # print("Dt ID" , str(dt[0]))
+        # type_record = dttsaSupportServices.getDTType(dt[0])
+        # print("type record", str(len(type_record)))
+        # if (len(type_record) != 1 ):
+        #     assigned_dt_type = getDTType(dt[0])
+        #     dttsaSupportServices.addDTType(dt[0],assigned_dt_type)
+        #     dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        # else:
+        dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
 
     print("___")
     print(qos_results)
