@@ -19,3 +19,4 @@ WORKDIR $app/API/
 #docker run -d -it --name dttsa -v $(pwd)/API/csv:/app/API/csv dttsa-26-11
 EXPOSE 9000
 ENTRYPOINT [ "python", "dttsa.py"]
+# ENTRYPOINT [ "python", "dttsa_12_12_c1.py"]

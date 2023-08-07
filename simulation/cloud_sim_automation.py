@@ -25,14 +25,14 @@ sched = BackgroundScheduler()
 sched.start()
 
 
-number_of_simulations = 3
+number_of_simulations = 10
 
-main_server = "34.66.94.161"
+main_server = "34.171.25.121"
 
-us_server = "34.136.81.197"
-eu_server = "34.28.27.133"
-asia_server = "35.232.70.40"
-north_server = "34.70.133.37"
+us_server = "104.154.17.194"
+eu_server = "35.223.233.59"
+asia_server = "34.173.139.246"
+north_server = "35.239.37.79"
 dttsa_port = 9000
 
 sim_prefix = "s"+str(3)
@@ -85,7 +85,7 @@ def cloudSimStart():
             print("DTTSA QoS Finished")
             evaluteSimulation()
             saveSimulationFiles()
-            saveFiles(sim_prefix+"_"+number_of_simulations)
+            saveFiles(sim_prefix+"_"+str(number_of_simulations))
             deleteFiles()
             number_of_simulations = number_of_simulations - 1
             sim_started = False
@@ -97,7 +97,7 @@ def cloudSimStart():
 
 def startScheduleJob():
     print("Starts the Scheduled jobs")
-    sched.add_job(cloudSimStart,'interval', seconds=10, id='my_job_id')
+    sched.add_job(cloudSimStart,'interval', seconds=300, id='my_job_id')
     
 
 def stopScheduleJob():
@@ -112,4 +112,4 @@ while number_of_simulations != 0:
         execute_cloud_sim()
         startScheduleJob()
         sim_started = True
-    sleep(10)
+    sleep(300)

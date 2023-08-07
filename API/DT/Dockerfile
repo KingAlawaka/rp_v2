@@ -17,5 +17,8 @@ RUN pip install -r DTrequirements.txt
 #docker run -d -it --name dt2 dt_19_11 -port 9100 -db data.db
 EXPOSE 9100
 # ENTRYPOINT [ "python", "./dt.py"]
-ENTRYPOINT [ "python", "./dt_backup_last.py"]
-#ENTRYPOINT [ "python", "./dt_backup_v2.py"]
+# ENTRYPOINT [ "python", "./dt_backup_last.py"]
+# ENTRYPOINT [ "python", "./dt_backup_5_12.py"]
+# ENTRYPOINT [ "python", "./dt_backup_v2.py"]
+# ENTRYPOINT [ "python", "./dt_dtbackup_5_12.py"]
+ENTRYPOINT [ "python", "./dt_doc_29_5_23_v3.py" ]

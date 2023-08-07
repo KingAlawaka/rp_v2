@@ -11,3 +11,4 @@ sudo groupadd docker
 sudo usermod -aG docker $USER 
 newgrp docker 
 sudo systemctl status docker
+sudo apt install python3-pip

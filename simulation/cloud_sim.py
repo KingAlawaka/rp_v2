@@ -12,13 +12,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 st = time.time()
 client = docker.from_env()
 
-main_server = "34.66.94.161"
-main_server2 = "34.66.94.161"
+main_server = "34.171.25.121"
+main_server2 = "34.171.25.121"
 
-us_server = "34.136.81.197"
-eu_server = "34.28.27.133"
-asia_server = "35.232.70.40"
-north_server = "34.70.133.37"
+us_server = "34.171.25.121"
+eu_server = "35.223.233.59"
+asia_server = "34.173.139.246"
+north_server = "35.239.37.79"
 
 dttsa_port = 9000
 astra_port = 8094
@@ -28,8 +28,8 @@ dt_n_port_start = 9001
 dt_c_port_start = 9009
 dt_m_port_start = 9017
 backup_dt_port_start = 9030
-num_of_dts_per_location = 3  #max 25
-backup_dts_per_location = 1 #max 10
+num_of_dts_per_location = 5  #max 25
+backup_dts_per_location = 2 #max 10
 
 same_type_count = int(num_of_dts_per_location / 3)
 dt_types = ['n','c','m']
@@ -301,14 +301,14 @@ def main():
     # startupDTTSA(main_server2)
 
     #TODO restart DTs
-    # restartDTs()
-    restartTypeDTs()
+    restartDTs()
+    # restartTypeDTs()
     time.sleep(60)
 
     #TODO type of the experiment
-    # startDTs()
+    startDTs()
     # startDTs(set_dt_type=True)
-    startTypeBaseDTs()
+    # startTypeBaseDTs()
 
     print(dt_start_fail_urls)
     time.sleep(20)

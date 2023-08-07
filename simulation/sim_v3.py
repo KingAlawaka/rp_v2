@@ -20,14 +20,16 @@ client = docker.from_env()
 # print(client.images.list())
 # imageList = client.images.list()
 
-dttsa_img = 'dttsa-12-12-c1'
-dt_img = 'dt-5-12'
-dt_backup = 'dt-backup-5-12'
+dttsa_img = 'kingalawaka/dttsa:v1'
+dt_img = 'kingalawaka/dt-29-5-23-v3'
+dt_backup = 'kingalawaka/backup-dt-17-06-23'
 
 dttsa = client.containers.run(dttsa_img,remove=True, detach=True,name='dttsa',volumes=['/var/folders/csv:/app/API/csv'])
 dttsa_obj = client.containers.get("dttsa")
 dttsa_ip = dttsa_obj.attrs['NetworkSettings']['IPAddress']
-print("DTTSA IP"+ dttsa_ip )
+# dttsa_ip = dttsa_obj.attrs.get("NetworkSettings", {})#.get("Networks", {}).get("IPAddress")
+print(dttsa_obj.name)
+print("DTTSA IP"+ str(dttsa_ip) )
 
 num_of_dts = 5
 dts_doc_objs = []
@@ -40,7 +42,7 @@ qos_started = False
 dt_type_original = []
 
 # random_seed = datetime.now().timestamp()
-random_seed = 8908908901
+random_seed = 123456789
 random.seed(random_seed)
 
 for i in range(1,num_of_dts+1):
@@ -48,15 +50,16 @@ for i in range(1,num_of_dts+1):
     dt_type = random.choice(dt_types)
     # dt_type = 'n'
     env_var_list = ["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip),"rand_seed="+str(random_seed)]
-    client.containers.run(dt_img,remove=True,detach=True,name='dt_'+str(i),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port "+str(dt_port)+" -db data.db")
+    client.containers.run(dt_img,remove=True,detach=True,name='dt_'+str(i),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'])
     dts_doc_objs.append(client.containers.get("dt_"+str(i)))
     dt_type_original.append(dt_type)
 
+print(dts_doc_objs)
 print(dt_type_original)
 
 def runDTBackupDoc(id,dt_type):
     env_var_list = ["dt_type="+dt_type,"CDT_goal=min","num_dts=12","num_iterations=15","dttsa_IP="+str(dttsa_ip)]
-    client.containers.run(dt_backup,remove=True,detach=True,name='dt_backup_'+str(id),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port "+str(dt_port)+" -db data.db")
+    client.containers.run(dt_backup,remove=True,detach=True,name='dt_backup_'+str(id),environment=env_var_list,volumes=['/var/folders/csv:/app/csv'])
     return client.containers.get("dt_backup_"+str(id))
     backup_dts_doc_objs.append(client.containers.get("dt_backup"+str(id)))
 
@@ -162,12 +165,12 @@ except (KeyboardInterrupt, SystemExit):
         # Not strictly necessary if daemonic mode is enabled but should be done if possible
     print('Stopping simulation...')
     scheduler.shutdown()
-    dttsa_obj.stop()
-    for dt_obj in dts_doc_objs:
-        dt_obj.stop()
+    # dttsa_obj.stop()
+    # for dt_obj in dts_doc_objs:
+    #     dt_obj.stop()
     
-    for dt_obj in backup_dts_doc_objs:
-        dt_obj.stop()
+    # for dt_obj in backup_dts_doc_objs:
+    #     dt_obj.stop()
     
 # dt1 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt1',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")
 # dt2 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt2',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")

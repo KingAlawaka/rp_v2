@@ -20,14 +20,16 @@ client = docker.from_env()
 # print(client.images.list())
 # imageList = client.images.list()
 
-dttsa_img = 'dttsa-12-12-c1'
-dt_img = 'dt-5-12'
-dt_backup = 'dt-backup-5-12'
+dttsa_img = 'kingalawaka/dttsa-local'
+dt_img = 'kingalawaka/dt-local'
+dt_backup = 'kingalawaka/dt-backup-local'
 
 dttsa = client.containers.run(dttsa_img,remove=True, detach=True,name='dttsa',volumes=['/var/folders/csv:/app/API/csv'])
 dttsa_obj = client.containers.get("dttsa")
 dttsa_ip = dttsa_obj.attrs['NetworkSettings']['IPAddress']
-print("DTTSA IP"+ dttsa_ip )
+# dttsa_ip = dttsa_obj.attrs.get("NetworkSettings", {})#.get("Networks", {}).get("IPAddress")
+print(dttsa_obj.name)
+print("DTTSA IP"+ str(dttsa_ip) )
 
 num_of_dts = 5
 dts_doc_objs = []
@@ -52,6 +54,7 @@ for i in range(1,num_of_dts+1):
     dts_doc_objs.append(client.containers.get("dt_"+str(i)))
     dt_type_original.append(dt_type)
 
+print(dts_doc_objs)
 print(dt_type_original)
 
 def runDTBackupDoc(id,dt_type):
@@ -162,12 +165,12 @@ except (KeyboardInterrupt, SystemExit):
         # Not strictly necessary if daemonic mode is enabled but should be done if possible
     print('Stopping simulation...')
     scheduler.shutdown()
-    dttsa_obj.stop()
-    for dt_obj in dts_doc_objs:
-        dt_obj.stop()
+    # dttsa_obj.stop()
+    # for dt_obj in dts_doc_objs:
+    #     dt_obj.stop()
     
-    for dt_obj in backup_dts_doc_objs:
-        dt_obj.stop()
+    # for dt_obj in backup_dts_doc_objs:
+    #     dt_obj.stop()
     
 # dt1 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt1',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")
 # dt2 = client.containers.run('dt-26-11',remove=True,detach=True,name='dt2',environment=env_var_list,volumes=['/var/folders/csv:/app/csv'],command="-port 9100 -db data.db")
