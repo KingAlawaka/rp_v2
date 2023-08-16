@@ -6,11 +6,17 @@ import time
 import os
 import json
 import random
+import argparse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
 st = time.time()
 client = docker.from_env()
+
+argParser = argparse.ArgumentParser()
+argParser.add_argument("-n","--numDT", help="Number of DTs")
+argParser.add_argument("-b","--numBDT", help="Number of Backup DTs")
+args = argParser.parse_args()
 
 main_server = "34.171.25.121"
 main_server2 = "34.171.25.121"
@@ -28,10 +34,12 @@ dt_n_port_start = 9001
 dt_c_port_start = 9009
 dt_m_port_start = 9017
 backup_dt_port_start = 9030
-num_of_dts_per_location = 5  #max 25
-backup_dts_per_location = 2 #max 10
+num_of_dts_per_location = int(args.numDT)  #max 25
+backup_dts_per_location = int(args.numBDT) #max 10
+# arg_value = args.numDT
+# print(arg_value)
 
-same_type_count = int(num_of_dts_per_location / 3)
+same_type_count = int(int(num_of_dts_per_location) / 3)
 dt_types = ['n','c','m']
 dt_type_counter = 0
 location_type_counter = 0
@@ -76,6 +84,7 @@ def startupDTTSA(server_name):
 
 def restartDTs():
     print("DT restarting process started")
+    # print(arg_value)
     try:
         for l in dt_server_ips:
             for i in range(num_of_dts_per_location):

@@ -5,12 +5,12 @@ do
         docker run -d -it --restart always  --name "dt-${i}" -p $(( p + i )):9100 --env dt_type=n kingalawaka/dt-29-5-23-v3
 done
 
-for i in {9..16}
+for i in {9..9}
 do
         docker run -d -it --restart always  --name "dt-${i}" -p $(( p + i )):9100 --env dt_type=c kingalawaka/dt-29-5-23-v3
 done
 
-for i in {17..24}
+for i in {10..10}
 do
         docker run -d -it --restart always  --name "dt-${i}" -p $(( p + i )):9100 --env dt_type=m kingalawaka/dt-29-5-23-v3
 done

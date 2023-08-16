@@ -130,3 +130,6 @@ order by api_tbl.id;
 
 ### truncate and restart tables
 TRUNCATE api_qos_records_tbl,api_qos_tbl,api_security_check_tbl,api_tbl,backup_qos_records_tbl,backup_qos_tbl,backup_service_locations_tbl,dt_tbl,dttsa_evaluation_config_tbl RESTART IDENTITY;
+
+### get sub count
+select sub_dt_id,count(sub_dt_id) from dt_sub_tbl group by sub_dt_id;

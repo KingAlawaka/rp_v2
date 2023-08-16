@@ -114,6 +114,11 @@ class DBHelper:
             #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values (%s,%s,%s,%s,1);',(req_type,DT_ID,API_ID,value)
             #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values ('+ req_type +','+ str(DT_ID)+','+str(API_ID)+','+str(value)+',0);'
             print("except: addExternalSub ", str(e))
+
+    def getCurrentConnectionCount(self):
+        allRows = self.readDB('select count(*) as con_count from subs_external_tbl;')
+        return allRows
+
     
     def addInternalSub(self,req_type,DT_ID,API_ID,url,formula_position):
         try:

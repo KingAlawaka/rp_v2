@@ -474,14 +474,15 @@ def evaluation():
         print(res)
         predicted_type = dtTypePredictor(res)
         # print("Dt ID" , str(dt[0]))
-        # type_record = dttsaSupportServices.getDTType(dt[0])
-        # print("type record", str(len(type_record)))
-        # if (len(type_record) != 1 ):
-        #     assigned_dt_type = getDTType(dt[0])
-        #     dttsaSupportServices.addDTType(dt[0],assigned_dt_type)
-        #     dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
-        # else:
-        dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        #TODO uncommented adding DTs calculations available back to DT type table
+        type_record = dttsaSupportServices.getDTType(dt[0])
+        print("type record", str(len(type_record)))
+        if (len(type_record) != 1 ):
+            assigned_dt_type = getDTType(dt[0])
+            dttsaSupportServices.addDTType(dt[0],assigned_dt_type)
+            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
+        else:
+            dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
 
     print("___")
     print(qos_results)
@@ -702,7 +703,7 @@ def restartService():
 def DTTSAStatus():
     config.read('environment_config.ini')
     return json.dumps({
-        'version' : "v4",
+        'version' : "v7",
         'astra' : str(config['servers']['API_VULNERBILITY_SERVICE_URL']),
         'db' : str(config['database']['db_ip'])
     })

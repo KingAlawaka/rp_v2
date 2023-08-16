@@ -136,7 +136,8 @@ class DTTSASupportServices:
     def getOtherDTAPIs(self,DT_ID):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]');",(DT_ID))
+        # cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]');",(DT_ID))
+        cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID not in (select sub_dt_id from dt_sub_tbl group by sub_dt_id having count(*) > 5) ;",(DT_ID))
         #cur.execute('select * from api_tbl where DT_ID != %s;',(DT_ID))
         DTs = cur.fetchall()
         cur.close()

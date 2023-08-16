@@ -308,13 +308,18 @@ def recordExternalSub():
     subReq_type = request.args.get('req')   #request type
     subURL = request.args.get('url')        #URL need to response
     ex_dt_url = request.args.get('dt_url') #External_dt URL
+    currentConCount = 0
+    db_result = dbHelper.getCurrentConnectionCount()
+    for c in db_result:
+        currentConCount = int(c[0])
+        print("current connection count" + str(c[0]))
     
     if app.config['getinID'] != -1 and app.config['getoutID'] != -1 and app.config['postinID'] != -1 and app.config['postoutID'] != -1:
-        if subAPI_ID in (app.config['getinID'],app.config['getoutID'],app.config['postinID'],app.config['postoutID']):
+        if subAPI_ID in (app.config['getinID'],app.config['getoutID'],app.config['postinID'],app.config['postoutID']) and currentConCount < 5:
             dbHelper.addExternalSub(subReq_type,subDT_ID,subAPI_ID,subURL,ex_dt_url)
             response = {"msg": "Subscribed successfully","status": "Success"},200
         else:
-            response = {"msg": "API ID is not in the range of DTs possible APIs","status": "Failed"},400
+            response = {"msg": "API ID is not in the range of DTs possible APIs or maximum connection count","status": "Failed"},400
     else:
         response = {"msg": "DT, APIs did not have IDs","status": "Failed"},400
     return response
@@ -332,21 +337,24 @@ def recordInternalSub():
         print(apiList)
         print(externalVarLocations)
         for varLocation in externalVarLocations:
-            
-            selectedIndex = random.choice(apiList)
-            dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation)
-            #TODO local env use IPs and using a regex IP extracted. cloud env need full
-            # temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
-            sub_dt_url = URL_pattern_regex.search(selectedIndex['URL'])[0]
-            print(sub_dt_url)
-            if selectedIndex['type'] == 'POST':
-                url = str(app.config['service_url']) +"/getpost/"
-            else:
-                url = selectedIndex['URL']
-            # print('http://'+ temp_DT_IP +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
-            # res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
-            res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
-
+            sub_success = False
+            while sub_success == False:
+                selectedIndex = random.choice(apiList)
+                dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation)
+                #TODO local env use IPs and using a regex IP extracted. cloud env need full
+                # temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
+                sub_dt_url = URL_pattern_regex.search(selectedIndex['URL'])[0]
+                print(sub_dt_url)
+                if selectedIndex['type'] == 'POST':
+                    url = str(app.config['service_url']) +"/getpost/"
+                else:
+                    url = selectedIndex['URL']
+                # print('http://'+ temp_DT_IP +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                # res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                if res.status_code == 200:
+                    sub_success = True
+    
         res = {"msg": "Sucess"}
         return make_response(res,200)
     except Exception as e:
@@ -866,20 +874,20 @@ def runSchedulerJobs():
 
 def start_server(args):
     #TODO manual port set
-    app.config.update(
-        port = "9100"
-    )
     # app.config.update(
-    #     port = args.port
+    #     port = "9100"
     # )
+    app.config.update(
+        port = args.port
+    )
     runSchedulerJobs()
-    app.run(host='0.0.0.0',port=9100)
+    app.run(host='0.0.0.0',port=args.port)
     
 
 def main(args):
     #TODO manual db name set
-    dbHelper.createDB("data1.db")
-    # dbHelper.createDB(args.db)
+    # dbHelper.createDB("data1.db")
+    dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl
     # with open('environment_config.ini','w') as configfile:
@@ -892,8 +900,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
     #TODO commented out the parameter passing easy cloud deployment
-    # parser.add_argument('-port') #python3 dt.py -port <port>
-    # parser.add_argument('-db')
+    parser.add_argument('-port') #python3 dt.py -port <port>
+    parser.add_argument('-db')
     # parser.add_argument('-nl')
     args = parser.parse_args()
     main(args)

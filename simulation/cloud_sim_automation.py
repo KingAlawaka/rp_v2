@@ -25,9 +25,9 @@ sched = BackgroundScheduler()
 sched.start()
 
 
-number_of_simulations = 10
+number_of_simulations = 5
 
-main_server = "34.171.25.121"
+main_server = "34.31.200.232"
 
 us_server = "104.154.17.194"
 eu_server = "35.223.233.59"
@@ -35,9 +35,14 @@ asia_server = "34.173.139.246"
 north_server = "35.239.37.79"
 dttsa_port = 9000
 
-sim_prefix = "s"+str(3)
+sim_prefix = "sim"
 
 sim_started = False
+
+sim_DTs = [5,10,15,20,25]
+# sim_DTs = [5,5]
+sim_BDTs = [2,5,7,10,10]
+sim_count = 0
 
 
 # app = Flask(__name__)
@@ -45,10 +50,10 @@ sim_started = False
 # scheduler = APScheduler()
 # scheduler.init_app(app)
 
-def execute_cloud_sim():
+def execute_cloud_sim(numDT, numBDT):
     global sim_started
     sim_started = True
-    os.system("python3 cloud_sim.py")
+    os.system("python3 cloud_sim.py -n "+str(numDT)+" -b "+str(numBDT))
 
 def makeURL(ip,port):
     return "http://"+ip+":"+ str(port)
@@ -85,7 +90,7 @@ def cloudSimStart():
             print("DTTSA QoS Finished")
             evaluteSimulation()
             saveSimulationFiles()
-            saveFiles(sim_prefix+"_"+str(number_of_simulations))
+            saveFiles(sim_prefix+"_"+str(sim_DTs[sim_count-1])+"_"+str(number_of_simulations))
             deleteFiles()
             number_of_simulations = number_of_simulations - 1
             sim_started = False
@@ -97,7 +102,7 @@ def cloudSimStart():
 
 def startScheduleJob():
     print("Starts the Scheduled jobs")
-    sched.add_job(cloudSimStart,'interval', seconds=300, id='my_job_id')
+    sched.add_job(cloudSimStart,'interval', seconds=120, id='my_job_id')
     
 
 def stopScheduleJob():
@@ -109,7 +114,9 @@ def stopScheduleJob():
 while number_of_simulations != 0:
     print("Sim Number "+str(number_of_simulations))
     if sim_started == False:
-        execute_cloud_sim()
+        execute_cloud_sim(sim_DTs[sim_count],sim_BDTs[sim_count])
         startScheduleJob()
         sim_started = True
-    sleep(300)
+        sim_count = sim_count + 1
+    sleep(120)
+#TODO in current implementation sim_count = number of simulations.
