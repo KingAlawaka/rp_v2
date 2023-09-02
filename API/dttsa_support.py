@@ -55,7 +55,7 @@ class DTTSASupportServices:
     def getDTType(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from dt_type_tbl where DT_ID= %s;',(dt_id,))
+        cur.execute('select * from dt_type_tbl where DT_ID= %s and status=1;',(dt_id,))
         dt_type = cur.fetchall()
         cur.close()
         conn.close()
@@ -64,7 +64,7 @@ class DTTSASupportServices:
     def getUser(self,username,org_code):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from user_tbl where username=%s and org_code=%s;',(username,org_code))
+        cur.execute('select * from user_tbl where username=%s and org_code=%s and status=1;',(username,org_code))
         user = cur.fetchall()
         cur.close()
         conn.close()
@@ -73,7 +73,7 @@ class DTTSASupportServices:
     def getOrgList(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from public."organization_tbl";')
+        cur.execute('select * from organization_tbl where status=1;')
         orgList = cur.fetchall()
         cur.close()
         return orgList
@@ -81,7 +81,7 @@ class DTTSASupportServices:
     def getDTs(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name,sum(api_security_check_tbl.low_count) as low_sum,sum(api_security_check_tbl.mid_count) as mid_sum,sum(api_security_check_tbl.high_count) as high_sum from dt_tbl join api_security_check_tbl on dt_tbl.id = dt_id group by dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name; ')
+        cur.execute('select dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name,sum(api_security_check_tbl.low_count) as low_sum,sum(api_security_check_tbl.mid_count) as mid_sum,sum(api_security_check_tbl.high_count) as high_sum from dt_tbl join api_security_check_tbl on dt_tbl.id = dt_id where dt_tbl.status=1 and api_security_check_tbl.status=1 group by dt_tbl.org_code,dt_tbl.dt_code,dt_tbl.dt_name; ')
         DTs = cur.fetchall()
         cur.close()
         return DTs
@@ -128,7 +128,7 @@ class DTTSASupportServices:
     def getDTAPIs(self, DT_ID):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from api_tbl where DT_ID = %s;',(DT_ID))
+        cur.execute('select * from api_tbl where DT_ID = %s and status=1;',(DT_ID))
         DTs = cur.fetchall()
         cur.close()
         return DTs
@@ -137,7 +137,7 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         # cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]');",(DT_ID))
-        cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID not in (select sub_dt_id from dt_sub_tbl group by sub_dt_id having count(*) > 5) ;",(DT_ID))
+        cur.execute("select * from api_tbl where DT_ID !=%s and status=1 and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID not in (select sub_dt_id from dt_sub_tbl where status=1 group by sub_dt_id having count(*) > 5) ;",(DT_ID))
         #cur.execute('select * from api_tbl where DT_ID != %s;',(DT_ID))
         DTs = cur.fetchall()
         cur.close()
@@ -146,7 +146,7 @@ class DTTSASupportServices:
     def getDTDependencies(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_id,sub_dt_id,count(dt_id) from dt_sub_tbl group by dt_id,sub_dt_id order by dt_id;')
+        cur.execute('select dt_id,sub_dt_id,count(dt_id) from dt_sub_tbl where status=1 group by dt_id,sub_dt_id order by dt_id;')
         records = cur.fetchall()
         cur.close()
         return records
@@ -154,7 +154,7 @@ class DTTSASupportServices:
     def getDTIDs(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select id from dt_tbl;')
+        cur.execute('select id from dt_tbl where status=1;')
         records = cur.fetchall()
         cur.close()
         return records
@@ -162,7 +162,7 @@ class DTTSASupportServices:
     def getDTDetails(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from dt_tbl where id = %s;',(dt_id,))
+        cur.execute('select * from dt_tbl where id = %s and status=1;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -170,7 +170,7 @@ class DTTSASupportServices:
     def getDTDataByType(self,dt_id,data_type):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from dt_data_submission_tbl where data_type=%s and sub_dt_id=%s;',(data_type,dt_id))
+        cur.execute('select * from dt_data_submission_tbl where data_type=%s and sub_dt_id=%s and status=1;',(data_type,dt_id))
         records = cur.fetchall()
         cur.close()
         return records
@@ -178,7 +178,7 @@ class DTTSASupportServices:
     def getDTTSAQoSValues(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from api_qos_records_tbl where dt_id =%s and time_per_req_mean > 0;',(dt_id,))
+        cur.execute('select * from api_qos_records_tbl where dt_id =%s and time_per_req_mean > 0 and status=1;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -186,7 +186,7 @@ class DTTSASupportServices:
     def getDTTSABackupQoSValues(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from backup_qos_records_tbl where dt_id =%s and time_per_req_mean > 0;',(dt_id,))
+        cur.execute('select * from backup_qos_records_tbl where dt_id =%s and time_per_req_mean > 0 and status=1;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -195,7 +195,9 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         # cur.execute('select id,dt_id,sum(avg) as trust_score from dttsa_trust_calculations_tbl group by dt_id,id order by id desc limit 4;')
-        cur.execute('select dt_id,sum(avg) as trust_score from temp_dttsa_trust_calculations_tbl group by dt_id order by dt_id asc;')
+        #TODO change the table and get newly calculated trust score values
+        # cur.execute('select dt_id,sum(avg) as trust_score from temp_dttsa_trust_calculations_tbl where status=1 group by dt_id order by dt_id asc;')
+        cur.execute('select dt_id,trust_score from dttsa_trust_scores_tbl where iteration_id=1 order by dt_id asc;')
         records = cur.fetchall()
         cur.close()
         return records
@@ -204,7 +206,7 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         # cur.execute('select id,dt_id,sum(avg) as trust_score from dttsa_trust_calculations_tbl group by dt_id,id order by id desc limit 4;')
-        cur.execute('select dt_id,category,sum(low_count),sum(mid_count),sum(high_count),avg(avg) from temp_dttsa_trust_calculations_tbl group by dt_id,category order by dt_id asc;')
+        cur.execute('select dt_id,category,sum(low_count),sum(mid_count),sum(high_count),avg(avg) from temp_dttsa_trust_calculations_tbl where status=1 group by dt_id,category order by dt_id asc;')
         records = cur.fetchall()
         cur.close()
         return records
@@ -212,7 +214,7 @@ class DTTSASupportServices:
     def getAPIVulnerbilityFinalValues(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_id,sum(low_count) as low,sum(mid_count) as mid, sum(high_count) as high  from api_security_check_tbl group by dt_id;')
+        cur.execute('select dt_id,sum(low_count) as low,sum(mid_count) as mid, sum(high_count) as high  from api_security_check_tbl where status=1 group by dt_id;')
         records = cur.fetchall()
         cur.close()
         return records
@@ -236,7 +238,7 @@ class DTTSASupportServices:
     def getQoSdata(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_id,round(avg(req_per_sec_mean)::numeric,2) as avg_req_per_sec,round(avg(time_per_req_min)::numeric,4)  as avg_time_per_req_min,round(avg(time_per_req_max)::numeric,4)  as avg_time_per_req_max,round(avg(time_per_req_mean)::numeric,4)  as avg_time_per_req_mean,round(avg(sum_response_time)::numeric,4)  as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
+        cur.execute('select dt_id,round(avg(req_per_sec_mean)::numeric,2) as avg_req_per_sec,round(avg(time_per_req_min)::numeric,4)  as avg_time_per_req_min,round(avg(time_per_req_max)::numeric,4)  as avg_time_per_req_max,round(avg(time_per_req_mean)::numeric,4)  as avg_time_per_req_mean,round(avg(sum_response_time)::numeric,4)  as avg_response_time from api_qos_records_tbl where status=1 group by dt_id order by dt_id;')
         # cur.execute('select dt_id,avg(req_per_sec_mean) as avg_req_per_sec,avg(time_per_req_min) as avg_time_per_req_min,avg(time_per_req_max) as avg_time_per_req_max,avg(time_per_req_mean) as avg_time_per_req_mean,avg(sum_response_time) as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
         orgList = cur.fetchall()
         cur.close()
@@ -322,7 +324,7 @@ class DTTSASupportServices:
     def getDTtypePredictions(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_id,dt_type_prediction from dttsa_trust_calculations_tbl where dt_id=%s;',(dt_id,))
+        cur.execute('select dt_id,dt_type_prediction from dttsa_trust_calculations_tbl where dt_id=%s and status=1;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -331,7 +333,7 @@ class DTTSASupportServices:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('update dt_type_tbl set dt_type_predict=%s where dt_id=%s;',(prediction,dt_id))
+            cur.execute('update dt_type_tbl set dt_type_predict=%s where dt_id=%s and status=1;',(prediction,dt_id))
             conn.commit()
             cur.close()
             conn.close()
@@ -353,12 +355,12 @@ class DTTSASupportServices:
         ret_value = "Started"
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished' order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished' and status=1 order by msg desc;")
         # cur.execute('select dt_id,avg(req_per_sec_mean) as avg_req_per_sec,avg(time_per_req_min) as avg_time_per_req_min,avg(time_per_req_max) as avg_time_per_req_max,avg(time_per_req_mean) as avg_time_per_req_mean,avg(sum_response_time) as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
         finished = cur.fetchall()
         cur.close()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Started'  order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Started' and status=1  order by msg desc;")
         started = cur.fetchall()
         cur.close()
         if len(finished) == 0 and len(started) == 0:
@@ -371,12 +373,12 @@ class DTTSASupportServices:
         ret_value = "Started"
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='BQoS' and execution_status='Finished' order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name='BQoS' and execution_status='Finished' and status=1 order by msg desc;")
         # cur.execute('select dt_id,avg(req_per_sec_mean) as avg_req_per_sec,avg(time_per_req_min) as avg_time_per_req_min,avg(time_per_req_max) as avg_time_per_req_max,avg(time_per_req_mean) as avg_time_per_req_mean,avg(sum_response_time) as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
         finished = cur.fetchall()
         cur.close()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='BQoS' and execution_status='Started'  order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name='BQoS' and execution_status='Started' and status=1  order by msg desc;")
         started = cur.fetchall()
         cur.close()
         if len(finished) == 0 and len(started) == 0:
@@ -389,7 +391,7 @@ class DTTSASupportServices:
         ret_value = "Started"
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='API' and execution_status='Running' and msg='APis remaning0'  order by id desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name='API' and execution_status='Running' and msg='APis remaning0' and status=1  order by id desc;")
         records = cur.fetchall()
         cur.close()
         if len(records) == 0:
@@ -397,8 +399,55 @@ class DTTSASupportServices:
         else:
             ret_value = "Finished"
         return ret_value
+    
+    def getDTTrustCalculations(self,dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select dt_type_prediction,count(dt_type_prediction) from dttsa_trust_calculations_tbl where dt_id = %s and status=1 group by dt_type_prediction;',(dt_id,))
+        # cur.execute('select * from api_qos_records_tbl where dt_id =%s and time_per_req_mean > 0 and status=1;',(dt_id,))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def addTrustScoresToTrustScoresTbl(self,iteration_id,dt_id,n_count,c_count,m_count,trust_score):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into dttsa_trust_scores_tbl (iteration_id,dt_id,n_count,c_count,m_count,trust_score) values (%s,%s,%s,%s,%s,%s);',(iteration_id,dt_id,n_count,c_count,m_count,trust_score))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    def updateStatusforTbls(self,iteration_count):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            # cur.execute('update dt_type_tbl set dt_type_predict=%s where dt_id=%s and status=1;',(iteration_count,))
+            cur.execute('update api_security_check_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update api_qos_records_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update backup_qos_records_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dt_data_submission_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dt_type_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dttsa_execution_status_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dttsa_trust_calculations_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update temp_dttsa_trust_calculations_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update trust_effect_calculation_tbl set status=%s where status=1;',(iteration_count,))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: updateStatusforTbls ", str(e))
+
+    def getDTIDsSubmitDTReports(self):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct dt_id FROM dt_data_submission_tbl where status=1;')
+        # cur.execute('select * from api_qos_records_tbl where dt_id =%s and time_per_req_mean > 0 and status=1;',(dt_id,))
+        records = cur.fetchall()
+        cur.close()
+        return records
 
     
+
     # def addAPISecurityCheck(self,DT_ID,API_ID,scan_id):
     #     try:
     #         conn = self.dbConnection.get_db_connection()

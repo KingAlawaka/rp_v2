@@ -39,7 +39,7 @@ class ResilienceAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('select ip from backup_service_locations_tbl where dt_id=%s;',(DT_ID))
+            cur.execute('select ip from backup_service_locations_tbl where dt_id=%s and status = 1;',(DT_ID))
             BackupServiceLocations = cur.fetchall()
             conn.commit()
             cur.close()
@@ -58,7 +58,7 @@ class ResilienceAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from backup_service_locations_tbl inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id where api_qos_tbl.test_count=%s order by api_tbl.id;',(str(test_count)))
+            cur.execute('select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from backup_service_locations_tbl inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id where api_qos_tbl.test_count=%s and backup_service_locations_tbl.status = 1 and api_qos_tbl.status = 1 and api_tbl.status = 1 order by api_tbl.id;',(str(test_count)))
             BackupServiceAPIs = cur.fetchall()
             conn.commit()
             cur.close()
@@ -97,7 +97,7 @@ class ResilienceAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('update backup_qos_tbl set test_count = test_count + 1 where dt_id=%s and api_id =%s;',(DT_ID,API_ID))
+            cur.execute('update backup_qos_tbl set test_count = test_count + 1 where dt_id=%s and api_id =%s and status=1;',(DT_ID,API_ID))
             conn.commit()
             cur.close()
             conn.close()

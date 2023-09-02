@@ -193,52 +193,56 @@ class DTLogic:
             print("calculateStdevQoS ",str(e))
     
     def generateFinalValues(self):
-        qos_connectedDTs = self.dbHelper.getConnectedQoSDTs()
-        connectedDTs = self.dbHelper.getConnectedDTs()
-        resQoS = []
-        for c in qos_connectedDTs:
-            qos_values = self.dbHelper.getQoSFromDT(c[0])
-            val = []
-            for v in qos_values:
-                val.append(v[0])
-            stdValue = round(statistics.stdev(val),4)
-            self.dbHelper.addFinalValueTbl(str(c[0]),'QoS',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
-            # resQoS.append("DT_ID "+str(c[0])+" QoS STD: "+str(stdValue))
-            # resQoS.append("DT_ID "+str(c[0])+" QoS min: "+str(min(val)))
-            # resQoS.append("DT_ID "+str(c[0])+" QoS max: "+str(max(val)))
-            # resQoS.append("DT_ID "+str(c[0])+" QoS avg: "+str(round(statistics.mean(val),3)))
-        resDTValues = []
-        for c in connectedDTs:
-            dt_values = self.dbHelper.getAllValuesFromDT(c[0])
-            val = []
-            for v in dt_values:
-                val.append(v[0])
-            stdValue = round(statistics.stdev(val),4)
-            self.dbHelper.addFinalValueTbl(str(c[0]),'Values',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
-            # resDTValues.append("DT_ID "+str(c[0])+" Val STD: "+str(stdValue))
-            # resDTValues.append("DT_ID "+str(c[0])+" Val min: "+str(min(val)))
-            # resDTValues.append("DT_ID "+str(c[0])+" Val max: "+str(max(val)))
-            # resDTValues.append("DT_ID "+str(c[0])+" Val avg: "+str(round(statistics.mean(val),3)))
-        
-        formula_final_values = self.dbHelper.getFormulaCalTbl()
-        temp = []
-        res_formula_values=[]
-        for v in formula_final_values:
-            temp.append(v[1])
-        stdValue = round(statistics.stdev(temp),4)
-        self.dbHelper.addFinalValueTbl(self.dt_id,'Final',stdValue,str(min(temp)),str(max(temp)),str(round(statistics.mean(temp),3)))
+        try:
+            qos_connectedDTs = self.dbHelper.getConnectedQoSDTs()
+            connectedDTs = self.dbHelper.getConnectedDTs()
+            resQoS = []
+            for c in qos_connectedDTs:
+                qos_values = self.dbHelper.getQoSFromDT(c[0])
+                val = []
+                for v in qos_values:
+                    val.append(v[0])
+                stdValue = round(statistics.stdev(val),4)
+                self.dbHelper.addFinalValueTbl(str(c[0]),'QoS',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
+                # resQoS.append("DT_ID "+str(c[0])+" QoS STD: "+str(stdValue))
+                # resQoS.append("DT_ID "+str(c[0])+" QoS min: "+str(min(val)))
+                # resQoS.append("DT_ID "+str(c[0])+" QoS max: "+str(max(val)))
+                # resQoS.append("DT_ID "+str(c[0])+" QoS avg: "+str(round(statistics.mean(val),3)))
+            resDTValues = []
+            for c in connectedDTs:
+                dt_values = self.dbHelper.getAllValuesFromDT(c[0])
+                val = []
+                for v in dt_values:
+                    val.append(v[0])
+                stdValue = round(statistics.stdev(val),4)
+                self.dbHelper.addFinalValueTbl(str(c[0]),'Values',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
+                # resDTValues.append("DT_ID "+str(c[0])+" Val STD: "+str(stdValue))
+                # resDTValues.append("DT_ID "+str(c[0])+" Val min: "+str(min(val)))
+                # resDTValues.append("DT_ID "+str(c[0])+" Val max: "+str(max(val)))
+                # resDTValues.append("DT_ID "+str(c[0])+" Val avg: "+str(round(statistics.mean(val),3)))
+            
+            formula_final_values = self.dbHelper.getFormulaCalTbl()
+            temp = []
+            res_formula_values=[]
+            for v in formula_final_values:
+                temp.append(v[1])
+            stdValue = round(statistics.stdev(temp),4)
+            self.dbHelper.addFinalValueTbl(self.dt_id,'Final',stdValue,str(min(temp)),str(max(temp)),str(round(statistics.mean(temp),3)))
 
 
 
-        # res_formula_values.append("Final Val STD: "+str(stdValue))
-        # res_formula_values.append("Final Val min: "+str(min(temp)))
-        # res_formula_values.append("Final Val max: "+str(max(temp)))
-        # res_formula_values.append("Final Val avg: "+str(round(statistics.mean(temp),3)))
-        # print(resQoS)
-        # print(resDTValues)
-        # print(res_formula_values)
-        print("Final Results created.")
-        return "okay"
+            # res_formula_values.append("Final Val STD: "+str(stdValue))
+            # res_formula_values.append("Final Val min: "+str(min(temp)))
+            # res_formula_values.append("Final Val max: "+str(max(temp)))
+            # res_formula_values.append("Final Val avg: "+str(round(statistics.mean(temp),3)))
+            # print(resQoS)
+            # print(resDTValues)
+            # print(res_formula_values)
+            print("Final Results created.")
+            return "okay"
+        except Exception as e:
+            print("generateFinalValues ",str(e))
+            return "Failed"
     
     def DT_evaluation(self):
         connectedDTs = self.dbHelper.getConnectedDTs()
@@ -287,13 +291,16 @@ class DTLogic:
         return "okay"
 
     def trendAnalysisExDTData(self):
-        conn = self.dbHelper.get_db_connection()
-        cursor = conn.cursor()
-        data = pd.read_sql('select * from data_tbl where value != -111111111.0;',conn)
-        dts = data.DT_ID.unique()
-        for dt in dts:
-            temp_df = data[data['DT_ID'] == dt]
-            result = mk.original_test(temp_df.value)
-            self.dbHelper.addTrendResults(dt,"data_tbl",result)
+        try:
+            conn = self.dbHelper.get_db_connection()
+            cursor = conn.cursor()
+            data = pd.read_sql('select * from data_tbl where value != -111111111.0;',conn)
+            dts = data.DT_ID.unique()
+            for dt in dts:
+                temp_df = data[data['DT_ID'] == dt]
+                result = mk.original_test(temp_df.value)
+                self.dbHelper.addTrendResults(dt,"data_tbl",result)
+        except Exception as e:
+            print("trendAnalysisExDTData ",str(e))
 
     

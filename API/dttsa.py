@@ -58,6 +58,8 @@ app.config['api_job'] = "False"
 app.config['qos_job'] = "False"
 app.config['dependency_creation'] = "False"
 app.config['trend_analysis_job'] = "False"
+app.config['iteration_count'] = 0
+app.config['analysis_started'] = False
 
 '''
 Check API vulnerbility finished results for submitted DTs
@@ -113,13 +115,8 @@ def runBackupQoSTest(test_count=0):
         print("BQoS analysis started")
         dttsaSupportServices.recordExecutionStatus("BQoS","Started",test_count)
 
-def generateDependecyGraph():
-    # evaluation()
-    #df = pd.read_csv('data.csv')
-    strfile="../Dashboardnew/static/assets/img/Graph.png"
+def trustEffectCalculations():
     records = dttsaSupportServices.getDTDependencies()
-    save_loc = "csv/Graph.png"
-    
     G=nx.DiGraph()
     for record in records:
         G.add_edge(str(record[1]), str(record[0]),weight=record[2]) #edge drawing from source to destination in order to correctly show that change order
@@ -142,22 +139,76 @@ def generateDependecyGraph():
     DTs = p.keys()
     print(DTs)
     trust_scores = dttsaSupportServices.getTrustCalculations()
-    for s in trust_scores:
-        trust_score.insert(int(s[0])-1,s[1])
-        te.append(0)
-    print(trust_score)
-    for dt in DTs:
-        #print(p[dt])
-        indirect_connets = p[dt].keys()
-        #print(indirect_connets)
-        for con in indirect_connets:
-            #print(con)
-            #print(len(p[dt][con]))
-            if con != dt:
-                te[int(con)-1] = te[int(con)-1] + trust_score[int(dt)-1] * influence / (len(p[dt][con])-1)
-                dttsaSupportServices.addTrustEffectCalculation(dt,con,len(p[dt][con])-1,te[int(con)-1],trust_score[int(dt)-1])
-    print(trust_score)
-    print(te)
+    if len(trust_scores) > 0:
+        for s in trust_scores:
+            trust_score.insert(int(s[0])-1,s[1])
+            te.append(0)
+        print(trust_score)
+        for dt in DTs:
+            #print(p[dt])
+            indirect_connets = p[dt].keys()
+            #print(indirect_connets)
+            for con in indirect_connets:
+                #print(con)
+                #print(len(p[dt][con]))
+                if con != dt:
+                    te[int(con)-1] = te[int(con)-1] + trust_score[int(dt)-1] * influence / (len(p[dt][con])-1)
+                    dttsaSupportServices.addTrustEffectCalculation(dt,con,len(p[dt][con])-1,te[int(con)-1],trust_score[int(dt)-1])
+        print(trust_score)
+        print(te)
+        return trust_score,te
+    else:
+        print("No trust scores to calculate")
+        return -1,-1
+
+def generateDependecyGraph():
+    # evaluation()
+    #df = pd.read_csv('data.csv')
+    strfile="../Dashboardnew/static/assets/img/Graph.png"
+    records = dttsaSupportServices.getDTDependencies()
+    save_loc = "csv/Graph.png"
+    
+    G=nx.DiGraph()
+    for record in records:
+        G.add_edge(str(record[1]), str(record[0]),weight=record[2]) #edge drawing from source to destination in order to correctly show that change order
+        print(str(record[0]), str(record[1]),record[2])
+    node_sizes =1500# [3 + 10 * i for i in range(len(G))]
+    pos = nx.spring_layout(G)
+    cmap = plt.cm.plasma
+    nx.draw_networkx(G,pos,node_size=1500, node_color='yellow', font_size=8, font_weight='bold',with_labels=True,arrows=True)
+    # nx.draw_networkx_nodes(G,pos,node_size=node_sizes,node_color='yellow')
+    # nx.draw_networkx_edges(G,pos,node_size=node_sizes,arrowstyle="->",arrowsize=10,edge_cmap=cmap,width=2)
+    #print(nx.is_directed(G))
+    #for record in records:
+        #p = nx.dijkstra_predecessor_and_distance(G,str(record[0]))
+    # p = nx.shortest_path(G)
+    # trust_score = []
+    # te = []
+    # #p = {'1': {'1': ['1'], '4': ['1', '4'], '2': ['1', '4', '2']}, '4': {'4': ['4'], '2': ['4', '2'], '1': ['4', '2', '1']}, '2': {'2': ['2'], '1': ['2', '1'], '4': ['2', '1', '4']}, '3': {'3': ['3'], '1': ['3', '1'], '4': ['3', '1', '4'], '2': ['3', '1', '4', '2']}, '5': {'5': ['5'], '2': ['5', '2'], '4': ['5', '4'], '1': ['5', '2', '1']}}
+    # #hop_count = 0
+    # influence = 0.5
+    # DTs = p.keys()
+    # print(DTs)
+    # trust_scores = dttsaSupportServices.getTrustCalculations()
+    # if len(trust_score) > 0:
+    #     for s in trust_scores:
+    #         trust_score.insert(int(s[0])-1,s[1])
+    #         te.append(0)
+    #     print(trust_score)
+    #     for dt in DTs:
+    #         #print(p[dt])
+    #         indirect_connets = p[dt].keys()
+    #         #print(indirect_connets)
+    #         for con in indirect_connets:
+    #             #print(con)
+    #             #print(len(p[dt][con]))
+    #             if con != dt:
+    #                 te[int(con)-1] = te[int(con)-1] + trust_score[int(dt)-1] * influence / (len(p[dt][con])-1)
+    #                 dttsaSupportServices.addTrustEffectCalculation(dt,con,len(p[dt][con])-1,te[int(con)-1],trust_score[int(dt)-1])
+    #     print(trust_score)
+    #     print(te)
+    # else:
+    #     print("No trust scores to calculate")
 
     #nx.draw(G,pos,node_size=1500, node_color='yellow', font_size=8, font_weight='bold',with_labels=True,arrows=True)
     # labels = nx.get_edge_attributes(G,'weight')
@@ -173,7 +224,48 @@ def generateDependecyGraph():
         os.remove(save_loc)
     plt.savefig(save_loc, format="PNG")
     plt.clf()
-    return trust_score,te
+
+@app.route("/analyze")
+def startAnalayze():
+    '''
+    check if DTs submitted values using
+    SELECT * FROM dt_data_submission_tbl where status=1;
+    then if not started start QOS and BQOS
+    if finish QoS and BQOS 
+    have a blocking conditional variable app.config['analysis_started']
+    '''
+    num_DTs = len(dttsaSupportServices.getDTIDs())
+    num_DTs_submitted_final_values = len(dttsaSupportServices.getDTIDsSubmitDTReports())
+    
+    msg = ""
+    if num_DTs > 0 and num_DTs_submitted_final_values > 0:
+        submit_percentage = num_DTs_submitted_final_values / num_DTs * 100
+        if submit_percentage >= 80.0 and app.config['analysis_started'] == False:
+            print("Starting analysis")
+            app.config.update(
+                analysis_started = True
+            )
+            runQoSTest(int(app.config['iteration_count']))
+            runBackupQoSTest(int(app.config['iteration_count']))
+            msg = "Analysis started"
+        else:
+            ret_value1 = dttsaSupportServices.qosExecutionStatus()
+            ret_value2 = dttsaSupportServices.backupQoSExecutionStatus()
+            if ret_value1 == "Finished" and ret_value2 == "Finished":
+                evaluation()
+                app.config.update(
+                    analysis_started = False
+                )
+                msg = "Evaluation completed, analysis completed"
+            elif ret_value1== "Started" or ret_value2== "Started":
+                msg = "Analysis Ongoin"
+            else:
+                msg = "Analysis not started"
+    else:
+        msg = "No DTs or submitted values"
+
+    return {"status":str(msg)},200
+
 
 @app.route("/save")
 def saveTblToCSV():
@@ -314,6 +406,38 @@ def dtTypePredictor(l):
         return "c"
     else:
         return "m"
+
+def trustScoreCalculation():
+    n_weight = 3
+    c_weight = 2
+    m_weight = 1
+    dts = dttsaSupportServices.getDTIDs()
+    i_count = int(app.config['iteration_count']) + 1
+    app.config.update(
+            iteration_count = i_count
+    )
+    for dt in dts:
+        dt_cat_trust_values = dttsaSupportServices.getDTTrustCalculations(dt[0])
+        n_count = 0
+        c_count = 0
+        m_count = 0
+        # print("raw counts")
+        # print(dt_cat_trust_values)
+        for v in dt_cat_trust_values:
+            # print("v "+v[0])
+            if v[0] == 'n':
+                n_count = v[1]
+            elif v[0] == 'c':
+                c_count = v[1]
+            elif v[0] == 'm':
+                m_count = v[1]
+        tot_cat_count = n_count + c_count + m_count
+        trust_score = (n_weight*n_count+c_weight*c_count+m_weight*m_count)/(tot_cat_count*3)*100
+        print("@@ DT @@")
+        print(dt)
+        print("n "+str(n_count)+" c "+str(c_count)+" m "+str(m_count))
+        print(trust_score)
+        dttsaSupportServices.addTrustScoresToTrustScoresTbl(app.config['iteration_count'],dt,n_count,c_count,m_count,trust_score)
 
 @app.route('/eval')
 def evaluation():
@@ -484,6 +608,10 @@ def evaluation():
         else:
             dttsaSupportServices.updateDTTypeTblWithPrediction(dt[0],predicted_type)
 
+    trustScoreCalculation()
+    trustEffectCalculations()
+    dttsaSupportServices.updateStatusforTbls(int(app.config['iteration_count']) * -1)
+
     print("___")
     print(qos_results)
     print("___")
@@ -518,8 +646,10 @@ def logout():
 
 @app.route('/')
 def index():
-    evaluation()
-    trust_score,te = generateDependecyGraph()
+    # evaluation()
+    generateDependecyGraph()
+    trust_score = dttsaSupportServices.getTrustCalculations()
+    te = ""
     orgList = dttsaSupportServices.getOrgList()
     DTs = dttsaSupportServices.getDTs()
     qos_data = dttsaSupportServices.getQoSdata()

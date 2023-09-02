@@ -214,6 +214,18 @@ create table dttsa_trust_calculations_tbl(
 	status int default 1
 );
 
+create table dttsa_trust_scores_tbl(
+	id serial,
+	iteration_id int,
+	dt_id int,
+	n_count int,
+	c_count int,
+	m_count int,
+	trust_score float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
 create table temp_dttsa_trust_calculations_tbl(
 	id serial,
 	dt_id int,

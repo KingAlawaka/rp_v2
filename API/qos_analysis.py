@@ -39,7 +39,7 @@ class QoSAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('update api_qos_tbl set test_count = test_count + 1 where dt_id=%s and api_id =%s;',(DT_ID,API_ID))
+            cur.execute('update api_qos_tbl set test_count = test_count + 1 where dt_id=%s and api_id =%s and status=1;',(DT_ID,API_ID))
             conn.commit()
             cur.close()
             conn.close()
@@ -66,7 +66,7 @@ class QoSAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute("select api_tbl.dt_id,api_qos_tbl.api_id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from api_tbl join api_qos_tbl on api_tbl.id = API_ID where api_qos_tbl.test_count = %s;",[test_count])
+            cur.execute("select api_tbl.dt_id,api_qos_tbl.api_id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from api_tbl join api_qos_tbl on api_tbl.id = API_ID where api_qos_tbl.test_count = %s and api_tbl.status=1 and api_qos_tbl.status=1;",[test_count])
             #cur.execute('insert into api_security_check_tbl (DT_ID,API_ID,scan_id) values (%s,%s,%s);',(DT_ID,API_ID,scan_id))
             APIs = cur.fetchall()
             cur.close()

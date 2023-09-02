@@ -42,3 +42,42 @@ app.config['num_iterations']
 app.config['num_dts']
 app.config['cdt_goal']
 app.config['dt_type']
+
+
+dt dbs need to change because of iterations
+trans_tbl
+qos_tbl
+trend_analysis_tbl
+dt_details_tbl
+stdev_tbl
+final_value_tbl
+stdev_qos_tbl
+data_tbl
+data_sent_tbl
+data_dt_gen_tbl
+cal_data_tbl
+subs_external_tbl
+subs_internal_tbl
+formula_cal_tbl
+formula_config_tbl
+
+dttsa tbls need to change because of iterations
+
+
+
+
+
+
+cur.execute('update api_security_check_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update api_qos_records_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update backup_qos_records_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update dt_data_submission_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update dt_type_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update dttsa_execution_status_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update dttsa_trust_calculations_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update temp_dttsa_trust_calculations_tbl set status=-1 where status=1;',(iteration_count,))
+cur.execute('update trust_effect_calculation_tbl set status=-1 where status=1;',(iteration_count,))
+
+
+
+

@@ -9,5 +9,5 @@ done
 b=9029
 for i in {1..10}
 do
-        docker run -d -it --restart always  --name "backup-dt-${i}" -p $(( b + i )):9100 --env dttsa_IP=http://34.173.74.160:9000 kingalawaka/backup-dt-17-06-23
+        docker run -d -it --restart always  --name "backup-dt-${i}" -p $(( b + i )):9600 --env dttsa_IP=http://34.173.74.160:9000 kingalawaka/backup-dt-17-06-23
 done

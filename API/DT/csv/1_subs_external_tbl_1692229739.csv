@@ -1,0 +1,4 @@
+id,direction,req_type,DT_ID,API_ID,url,ex_dt_url,status,created
+1,to,POST,3,3,http://127.0.0.1:9300/getpost/,http://127.0.0.1:9300,1,2023-08-16 23:44:55
+2,to,GET,2,2,http://127.0.0.1:9200/sendvalue,http://127.0.0.1:9100,1,2023-08-16 23:44:55
+3,to,POST,3,3,http://127.0.0.1:9300/getpost/,http://127.0.0.1:9300,1,2023-08-16 23:44:55

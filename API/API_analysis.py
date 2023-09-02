@@ -13,6 +13,7 @@ import hashlib
 import requests
 from dbconnection import DBConnection
 import configparser
+import re
 
 class APIAnalyzer:
     def __init__(self):
@@ -39,7 +40,7 @@ class APIAnalyzer:
     def checkSubmittedAPI(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select * from api_security_check_tbl where (low_count is NULL and mid_count is null and high_count is null) or (low_count = 0 and mid_count = 0 and high_count = 0) ;')
+        cur.execute('select * from api_security_check_tbl where (low_count is NULL and mid_count is null and high_count is null) or (low_count = 0 and mid_count = 0 and high_count = 0) and status=1;')
         APIs = cur.fetchall()
         conn.commit()
         cur.close()
@@ -75,7 +76,7 @@ class APIAnalyzer:
             
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute("update api_security_check_tbl set low_count=%s,mid_count=%s,high_count=%s,report=%s,timestamp=current_timestamp at time zone 'UTC' where scan_id = %s;",(low_count,mid_count,high_count,str(apiObj),api[3]))
+            cur.execute("update api_security_check_tbl set low_count=%s,mid_count=%s,high_count=%s,report=%s,timestamp=current_timestamp at time zone 'UTC' where scan_id = %s and status=1;",(low_count,mid_count,high_count,str(apiObj),api[3]))
             conn.commit()
             cur.close()
             conn.close()
@@ -97,6 +98,12 @@ class APIAnalyzer:
             print("Error: AddAPISecurityCheck")
     
     def checkAPIVulnerbilities(self,DT_ID,API_ID,url,sample_json,type_req):
+        #TODO remove url replacement. only for local testing with docker astra service (cloud)
+        ip_addr_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
+        specific_substitute = "host.docker.internal"
+        a = url
+        url = re.sub(ip_addr_regex, specific_substitute, url)
+            
         dictToSend = {"appname" : str(DT_ID)+"_"+str(API_ID),"url": url ,"headers": "","body": sample_json,"method": type_req,"auth_header": "","auth_url": ""}
         jsonObject = jsonify(dictToSend)
         config = configparser.ConfigParser()

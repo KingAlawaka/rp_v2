@@ -1,0 +1,3 @@
+id,direction,req_type,DT_ID,API_ID,url,formula_position,status
+1,from,POST,3,11,http://127.0.0.1:9300/sendpost/,4,1
+2,from,GET,3,9,http://127.0.0.1:9300/sendvalue,6,1

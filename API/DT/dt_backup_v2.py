@@ -33,11 +33,12 @@ config.read('environment_config.ini')
 hostname = socket.gethostname()
 IPAddress = socket.gethostbyname(hostname)
 localIP = IPAddress
-app.config['service_url'] = "notsetyet.com"
+print("d "+localIP)
+app.config['port'] = 9600
+app.config['service_url'] = "http://"+localIP+":"+str(app.config['port'])
 app.config['local_IP'] = str(app.config['service_url'])
 app.config['DT_ID'] = -1 #initially setting value to -1 to indicate that DT is not yet registered. positive value upon registration
 app.config['backup_IP'] = "" #no initial backup server will be deploy
-app.config['port'] = 9100
 app.config['getinID'] = -1
 app.config['getoutID'] = -1
 app.config['postinID'] = -1
@@ -864,18 +865,18 @@ def runSchedulerJobs():
 def start_server(args):
     #TODO manual port set
     app.config.update(
-        port = "9100"
+        port = "9600"
     )
     # app.config.update(
     #     port = args.port
     # )
     #runSchedulerJobs()
-    app.run(host='0.0.0.0',port=9100)
+    app.run(host='0.0.0.0',port=9600)
     
 
 def main(args):
     #TODO manual db name set
-    dbHelper.createDB("data1.db")
+    dbHelper.createDB("data3.db")
     # dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl

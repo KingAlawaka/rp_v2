@@ -1,0 +1,2 @@
+id,direction,req_type,DT_ID,API_ID,url,formula_position,status
+1,from,GET,1,2,http://127.0.0.1:9200/sendvalue,4,1

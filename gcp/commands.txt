@@ -32,7 +32,7 @@ sudo zip -r d25.zip . -x save/**\*
 
 cd csv ls
 
-select * from dt_type_tbl order by dt_id asc;
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where status=-1 order by dt_id asc;
 
 select count(id) from dttsa_trust_calculations_tbl group by dt_id;
 
@@ -40,10 +40,14 @@ select * from dttsa_trust_calculations_tbl where dt_id = 11;
 
 select * from dt_tbl;
 
-select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished';
+select * from dttsa_execution_status_tbl where function_name='BQoS' and execution_status='Finished';
 
-select * from api_qos_records_tbl where dt_id = 11;
+select * from api_qos_records_tbl;
 
 select * from dttsa_execution_status_tbl where function_name='QoS';
+
+SELECT distinct dt_id FROM dt_data_submission_tbl where status=1;
+
+select * from dttsa_trust_scores_tbl;
 
 docker run -d -it  --name test-dt -p 9100:9100 --env dttsa_IP=http://34.173.74.160:9000 --env rand_seed=123456789 dt

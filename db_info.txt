@@ -1,0 +1,39 @@
+status column will use to represent usage (1=using, 0=not using)
+organization_tbl
+user_tbl
+API_tbl
+DT_tbl
+dttsa_evaluation_config_tbl
+api_qos_tbl
+backup_service_locations_tbl
+backup_qos_tbl
+DT_sub_tbl
+dttsa_trust_scores_tbl
+
+following tables will be update status based on the iteration (* -1)
+api_security_check_tbl
+api_qos_records_tbl
+backup_qos_records_tbl
+dt_data_submission_tbl
+dt_type_tbl
+dttsa_execution_status_tbl
+dttsa_trust_calculations_tbl
+temp_dttsa_trust_calculations_tbl
+trust_effect_calculation_tbl
+
+--dt will change status of following dt_db status columns for num_iterationsdt dbs need to change because of iterations
+trans_tbl
+qos_tbl
+trend_analysis_tbl
+dt_details_tbl
+stdev_tbl
+final_value_tbl
+stdev_qos_tbl
+data_tbl
+data_sent_tbl
+data_dt_gen_tbl
+cal_data_tbl
+subs_external_tbl
+subs_internal_tbl
+formula_cal_tbl
+formula_config_tbl

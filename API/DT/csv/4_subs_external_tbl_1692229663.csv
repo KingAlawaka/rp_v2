@@ -1,0 +1,2 @@
+id,direction,req_type,DT_ID,API_ID,url,ex_dt_url,status,created
+1,to,POST,5,15,http://127.0.0.1:9500/getpost/,http://127.0.0.1:9500,1,2023-08-16 23:45:09
