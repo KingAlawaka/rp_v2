@@ -191,13 +191,13 @@ class DTTSASupportServices:
         cur.close()
         return records
 
-    def getTrustCalculations(self):
+    def getTrustCalculationsByIteration(self,itration):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         # cur.execute('select id,dt_id,sum(avg) as trust_score from dttsa_trust_calculations_tbl group by dt_id,id order by id desc limit 4;')
         #TODO change the table and get newly calculated trust score values
         # cur.execute('select dt_id,sum(avg) as trust_score from temp_dttsa_trust_calculations_tbl where status=1 group by dt_id order by dt_id asc;')
-        cur.execute('select dt_id,trust_score from dttsa_trust_scores_tbl where iteration_id=1 order by dt_id asc;')
+        cur.execute('select dt_id,trust_score from dttsa_trust_scores_tbl where iteration_id=%s order by dt_id asc;',(itration,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -431,6 +431,8 @@ class DTTSASupportServices:
             cur.execute('update dttsa_trust_calculations_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update temp_dttsa_trust_calculations_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update trust_effect_calculation_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dt_trust_report_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update reputation_categorization_tbl set status=%s where status=1;',(iteration_count,))
             conn.commit()
             cur.close()
             conn.close()
@@ -445,6 +447,46 @@ class DTTSASupportServices:
         records = cur.fetchall()
         cur.close()
         return records
+    
+    def getAllTrustScores(self):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select dt_id,trust_score from dttsa_trust_scores_tbl order by dt_id,iteration_id asc;')
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def dtTrustReportTbl(self,report_dt_id,for_dt_id,category,low_count,mid_count,high_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into dt_trust_report_tbl (report_dt_id,for_dt_id,category,low_count,mid_count,high_count) values (%s,%s,%s,%s,%s,%s);',(report_dt_id,for_dt_id,category,low_count,mid_count,high_count))
+        conn.commit()
+        cur.close()
+        conn.close()
+    
+    def getDTTrustReports(self,for_dt,category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select report_dt_id,sum(low_count) as low,sum(mid_count) as mid,sum(high_count) as high from dt_trust_report_tbl where for_dt_id = %s and report_dt_id != %s and category=%s group by report_dt_id;',(for_dt,for_dt,category))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getDTsByPrediction(self,prediction_type):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct dt_id from dt_type_tbl where dt_type_predict=%s order by dt_id asc;',(prediction_type,))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def addDTReputationCategorization(self,dt_id,pos_count,neg_count,eq_count,category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into reputation_categorization_tbl (dt_id,pos_count,neg_count,eq_count,category) values (%s,%s,%s,%s,%s);',(dt_id,pos_count,neg_count,eq_count,category))
+        conn.commit()
+        cur.close()
+        conn.close()
 
     
 

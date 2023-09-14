@@ -118,3 +118,17 @@ class APIAnalyzer:
             self.addAPISecurityCheck(DT_ID,API_ID,scan_id) #save to api_security_check_tbl
             print(scan_id)
 
+    def APISecurityAnalysisStatus(self):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from api_security_check_tbl where (low_count is NULL and mid_count is null and high_count is null) or (low_count = 0 and mid_count = 0 and high_count = 0) and status=1;')
+        APIs = cur.fetchall()
+        conn.commit()
+        cur.close()
+        conn.close()
+        if len(APIs) > 0:
+            ret_value = "None"
+        elif len(APIs) == 0:
+            ret_value = "Finished"
+        return ret_value
+

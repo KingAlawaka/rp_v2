@@ -138,7 +138,7 @@ def trustEffectCalculations():
     influence = 0.5
     DTs = p.keys()
     print(DTs)
-    trust_scores = dttsaSupportServices.getTrustCalculations()
+    trust_scores = dttsaSupportServices.getTrustCalculationsByIteration(app.config['iteration_count'])
     if len(trust_scores) > 0:
         for s in trust_scores:
             trust_score.insert(int(s[0])-1,s[1])
@@ -251,11 +251,15 @@ def startAnalayze():
         else:
             ret_value1 = dttsaSupportServices.qosExecutionStatus()
             ret_value2 = dttsaSupportServices.backupQoSExecutionStatus()
-            if ret_value1 == "Finished" and ret_value2 == "Finished":
+            ret_value3 = apiAnalyzer.APISecurityAnalysisStatus()
+            if ret_value1 == "Finished" and ret_value2 == "Finished" and ret_value3 == "Finished":
                 evaluation()
                 app.config.update(
                     analysis_started = False
                 )
+                
+                reputationAnalysis()
+                reputationAttackAnalysis()
                 msg = "Evaluation completed, analysis completed"
             elif ret_value1== "Started" or ret_value2== "Started":
                 msg = "Analysis Ongoin"
@@ -265,6 +269,80 @@ def startAnalayze():
         msg = "No DTs or submitted values"
 
     return {"status":str(msg)},200
+
+def reputationAnalysis():
+    dts = dttsaSupportServices.getDTIDs()
+    trust_scores = dttsaSupportServices.getAllTrustScores()
+    print(dts)
+    print(trust_scores)
+    for d in dts:
+        data = []
+        for t in trust_scores:
+            if d[0] == t[0]:
+                data.append(t[1])
+        print(data)
+        print(d[0])
+        reputationClassification(d[0],data)
+
+
+def reputationClassification(dt_id,data):
+    pos_count = 0
+    min_count = 0
+    eq_count = 0
+    status = ""
+    for i,t in enumerate(data):
+        print(i+1)
+        if i+2 <= len(data):
+            print("run")
+            if data[i] < data[i+1]:
+                pos_count += 1
+            elif data[i] > data[i+1]:
+                min_count += 1
+            else:
+                eq_count += 1
+
+    print(pos_count)
+    print(min_count)
+    print(eq_count)
+
+    #TODO refine the categorization logic
+    if pos_count == min_count == eq_count:
+        print("undecided")
+        status = "undecided"
+    elif min_count > pos_count and min_count > eq_count:
+        print("negative")
+        status = "negative"
+    elif pos_count > min_count  and pos_count > eq_count:
+        print("positive")
+        status = "positive"
+    elif eq_count > min_count and eq_count > pos_count:
+        print("positive")
+        status = "positive"
+    elif eq_count == min_count:
+        print("negative")
+        status = "negative"
+    elif pos_count == min_count:
+        print("negative")
+        status = "negative"
+    elif pos_count == eq_count:
+        print("positive")
+        status = "positive"
+    else:
+        print("undecided")
+        status = "undecided"
+    
+    dttsaSupportServices.addDTReputationCategorization(dt_id,pos_count,min_count,eq_count,status)
+
+def reputationAttackAnalysis():
+    normal_dts = dttsaSupportServices.getDTsByPrediction('n')
+    if len(normal_dts) == 0:
+        normal_dts = dttsaSupportServices.getDTsByPrediction('c')
+    for ndt in normal_dts:
+        trust_reports_values = dttsaSupportServices.getDTTrustReports(ndt[0],"Values")
+        trust_reports_qos = dttsaSupportServices.getDTTrustReports(ndt[0],"QoS")
+        print(trust_reports_values)
+        print(trust_reports_qos)
+        print("[][][][]")
 
 
 @app.route("/save")
@@ -489,10 +567,13 @@ def evaluation():
                 val = round(float(v[7]),1)
                 if val <= qos_low:
                     low_count = low_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],1,0,0)
                 elif val >= qos_mid and val <= qos_high:
                     mid_count = mid_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,1,0)
                 else:
                     high_count = high_count +1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,0,1)
             
             qos_counts = [low_count,mid_count,high_count]
             weighted_avg = weightedAvg(low_count,mid_count,high_count)
@@ -551,10 +632,13 @@ def evaluation():
                 val = round(float(v[4]),1)
                 if val <= value_low:
                     low_count = low_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],1,0,0)
                 elif val >= value_mid and val <= value_high:
                     mid_count = mid_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,1,0)
                 else:
                     high_count = high_count +1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,0,1)
             value_counts = [low_count,mid_count,high_count]
             weighted_avg = weightedAvg(low_count,mid_count,high_count)
             temp_results = [dt[0],value_counts,weighted_avg,DTTypeDetector(value_counts)]
@@ -648,7 +732,8 @@ def logout():
 def index():
     # evaluation()
     generateDependecyGraph()
-    trust_score = dttsaSupportServices.getTrustCalculations()
+    # trust_score = dttsaSupportServices.getTrustCalculations()
+    trust_score = ""
     te = ""
     orgList = dttsaSupportServices.getOrgList()
     DTs = dttsaSupportServices.getDTs()

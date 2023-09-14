@@ -248,3 +248,35 @@ create table trust_effect_calculation_tbl(
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
+
+create table dt_trust_report_tbl(
+	id serial,
+	report_dt_id int,
+	for_dt_id int,
+	category text,
+	low_count int,
+	mid_count int,
+	high_count int,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table reputation_attack_log_tbl(
+	id serial,
+	dt_id int,
+	attacked_dt_id int,
+	attack text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table reputation_categorization_tbl(
+	id serial,
+	dt_id int,
+	pos_count int,
+	neg_count int,
+	eq_count int,
+	category text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
