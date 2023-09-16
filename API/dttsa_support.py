@@ -488,6 +488,15 @@ class DTTSASupportServices:
         cur.close()
         conn.close()
 
+    def getAPIsToAnalyze(self,dt_type1,dt_type2,category,iteration_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        # cur.execute('select * from api_tbl where dt_id in (select distinct dt_id from dt_type_tbl where dt_type_predict=%s and status=%s) and status =1;',(dt_type,iteration_count))
+        cur.execute('select * from api_tbl where dt_id in (select distinct dt_id from dttsa_trust_calculations_tbl where (dt_type_prediction=%s or dt_type_prediction=%s) and category=%s and status=%s) and status =1;',(dt_type1,dt_type2,category,iteration_count))
+        records = cur.fetchall()
+        cur.close()
+        return records
+
     
 
     # def addAPISecurityCheck(self,DT_ID,API_ID,scan_id):

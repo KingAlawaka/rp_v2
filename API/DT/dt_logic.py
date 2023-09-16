@@ -150,7 +150,7 @@ class DTLogic:
 
     def createResponseHeaders(self,resObj):
         # TODO change it if want to fix api issues all the time
-        alwaysTrue = False #for testing purposes and override the random selection
+        alwaysTrue = False #for testing purposes and override the random selection, use 'and' to run complete malicious API behaviour
         if self.simHelper.fixAPISecurityVulnerbilities() or alwaysTrue:
             resObj.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
             resObj.headers['Content-Security-Policy'] = "default-src 'self'"

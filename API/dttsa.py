@@ -115,6 +115,13 @@ def runBackupQoSTest(test_count=0):
         print("BQoS analysis started")
         dttsaSupportServices.recordExecutionStatus("BQoS","Started",test_count)
 
+def runAPIAnalysis():
+    # iteration count * -1 because using status coloumn
+    apis_to_check = dttsaSupportServices.getAPIsToAnalyze('n','c','API Security',int(app.config['iteration_count'])*-1)
+    for api in apis_to_check:
+        apiAnalyzer.checkAPIVulnerbilities(api[1],api[0],api[2],api[5],api[4])
+    
+
 def trustEffectCalculations():
     records = dttsaSupportServices.getDTDependencies()
     G=nx.DiGraph()
@@ -247,6 +254,11 @@ def startAnalayze():
             )
             runQoSTest(int(app.config['iteration_count']))
             runBackupQoSTest(int(app.config['iteration_count']))
+            #TODO API analysis get all normal and submit again for analyze
+            if int(app.config['iteration_count']) > 0:
+                runAPIAnalysis()
+            else:
+                print("API analysis is already running")
             msg = "Analysis started"
         else:
             ret_value1 = dttsaSupportServices.qosExecutionStatus()
@@ -261,10 +273,10 @@ def startAnalayze():
                 reputationAnalysis()
                 reputationAttackAnalysis()
                 msg = "Evaluation completed, analysis completed"
-            elif ret_value1== "Started" or ret_value2== "Started":
-                msg = "Analysis Ongoin"
+            elif ret_value1== "Started" or ret_value2== "Started" or ret_value3 == "Started":
+                msg = "Analysis Ongoing"
             else:
-                msg = "Analysis not started"
+                msg = "Analysis not started "+ret_value1+" "+ret_value2+" "+ret_value3
     else:
         msg = "No DTs or submitted values"
 
