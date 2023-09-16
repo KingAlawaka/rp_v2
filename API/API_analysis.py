@@ -131,4 +131,15 @@ class APIAnalyzer:
         elif len(APIs) == 0:
             ret_value = "Finished"
         return ret_value
+    
+    def addMaliciousAPIs(self,DT_ID,API_ID,scan_id,low_count,mid_count,high_count):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            cur.execute('insert into api_security_check_tbl (DT_ID,API_ID,scan_id,low_count,mid_count,high_count) values (%s,%s,%s,%s,%s,%s);',(DT_ID,API_ID,scan_id,low_count,mid_count,high_count))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except:
+            print("Error: AddAPISecurityCheck")
 

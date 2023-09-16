@@ -58,7 +58,7 @@ app.config['api_job'] = "False"
 app.config['qos_job'] = "False"
 app.config['dependency_creation'] = "False"
 app.config['trend_analysis_job'] = "False"
-app.config['iteration_count'] = 0
+app.config['iteration_count'] = 0 #update inside the trustScoreCalculation()
 app.config['analysis_started'] = False
 
 '''
@@ -117,10 +117,15 @@ def runBackupQoSTest(test_count=0):
 
 def runAPIAnalysis():
     # iteration count * -1 because using status coloumn
-    apis_to_check = dttsaSupportServices.getAPIsToAnalyze('n','c','API Security',int(app.config['iteration_count'])*-1)
+    apis_to_check = dttsaSupportServices.getAPIsToAnalyze('n','n','API Security',int(app.config['iteration_count'])*-1)
     for api in apis_to_check:
         apiAnalyzer.checkAPIVulnerbilities(api[1],api[0],api[2],api[5],api[4])
-    
+    malicious_apis = dttsaSupportServices.getAPIsToAnalyze('m','c','API Security',int(app.config['iteration_count'])*-1)
+    for mapi in malicious_apis:
+        previous_api_record = dttsaSupportServices.getPreviousAPIRecords(mapi[1],mapi[0],int(app.config['iteration_count'])*-1)
+        for papi in previous_api_record:
+            apiAnalyzer.addMaliciousAPIs(mapi[1],mapi[0],papi[3],papi[4],papi[5],papi[6])
+
 
 def trustEffectCalculations():
     records = dttsaSupportServices.getDTDependencies()
@@ -689,8 +694,15 @@ def evaluation():
         # print(dt)
         records = dttsaSupportServices.getDTtypePredictions(dt[0])
         res = []
+        # api_analysis_tested = False
         for r in records:
+            # if r[2] == 'API Security':
+            #     api_analysis_tested = True
             res.append(r[1])
+        # if api_analysis_tested == False:
+        #     previous_api_result = dttsaSupportServices.getPreviousAPIPrediction(dt[0],int(app.config['iteration_count']) * -1)
+        #     for p in previous_api_result:
+        #         res.append(p[1])
         print(res)
         predicted_type = dtTypePredictor(res)
         # print("Dt ID" , str(dt[0]))

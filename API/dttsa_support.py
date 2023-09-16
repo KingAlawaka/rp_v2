@@ -324,7 +324,7 @@ class DTTSASupportServices:
     def getDTtypePredictions(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('select dt_id,dt_type_prediction from dttsa_trust_calculations_tbl where dt_id=%s and status=1;',(dt_id,))
+        cur.execute('select dt_id,dt_type_prediction,category from dttsa_trust_calculations_tbl where dt_id=%s and status=1;',(dt_id,))
         records = cur.fetchall()
         cur.close()
         return records
@@ -493,6 +493,22 @@ class DTTSASupportServices:
         cur = conn.cursor()
         # cur.execute('select * from api_tbl where dt_id in (select distinct dt_id from dt_type_tbl where dt_type_predict=%s and status=%s) and status =1;',(dt_type,iteration_count))
         cur.execute('select * from api_tbl where dt_id in (select distinct dt_id from dttsa_trust_calculations_tbl where (dt_type_prediction=%s or dt_type_prediction=%s) and category=%s and status=%s) and status =1;',(dt_type1,dt_type2,category,iteration_count))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getPreviousAPIPrediction(self,dt_id,iteration_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select dt_id,dt_type_prediction,category from dttsa_trust_calculations_tbl where dt_id=%s and status=%s;',(dt_id,iteration_count))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getPreviousAPIRecords(self,dt_id,api_id,iteration_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from api_security_check_tbl where dt_id=%s and api_id=%s and status=%s;',(dt_id,api_id,iteration_count))
         records = cur.fetchall()
         cur.close()
         return records
