@@ -901,21 +901,21 @@ def removeSchedulerJobs(job_name):
 
 def start_server(args):
     #TODO manual port set (cloud)
-    # app.config.update(
-    #     port = "9100"
-    # )
     app.config.update(
-        port = args.port
+        port = "9100"
     )
+    # app.config.update(
+    #     port = args.port
+    # )
     runSchedulerJobs()
-    app.run(host='0.0.0.0',port=args.port)
-    # app.run(host='0.0.0.0',port=9100)
+    # app.run(host='0.0.0.0',port=args.port)
+    app.run(host='0.0.0.0',port=9100)
     
 
 def main(args):
     #TODO manual db name set (cloud)
-    # dbHelper.createDB("data1.db")
-    dbHelper.createDB(args.db)
+    dbHelper.createDB("data1.db")
+    # dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl
     # with open('environment_config.ini','w') as configfile:
@@ -928,8 +928,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
     #TODO commented out the parameter passing easy cloud deployment
-    parser.add_argument('-port') #python3 dt.py -port <port>
-    parser.add_argument('-db')
+    # parser.add_argument('-port') #python3 dt.py -port <port>
+    # parser.add_argument('-db')
     # parser.add_argument('-nl')
     args = parser.parse_args()
     main(args)

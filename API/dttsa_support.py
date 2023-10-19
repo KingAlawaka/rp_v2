@@ -183,6 +183,14 @@ class DTTSASupportServices:
         cur.close()
         return records
     
+    def getDTTSAQoSValuesByTestType(self,dt_id,test_type):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from api_qos_records_tbl where dt_id =%s and time_per_req_mean > 0 and test_type=%s and status=1;',(dt_id,test_type))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
     def getDTTSABackupQoSValues(self,dt_id):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
@@ -297,6 +305,18 @@ class DTTSASupportServices:
             conn.close()
         except Exception as e:
             print("error: recordExecutionStatus ", str(e))
+
+    def addQoSStaging(self,dt_id,low_count,mid_count,high_count,category,test_type):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            cur.execute('insert into dttsa_qos_staging_tbl (dt_id,low_count,mid_count,high_count,category,test_type) values (%s,%s,%s,%s,%s,%s);',(dt_id,low_count,mid_count,high_count,category,test_type))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: recordExecutionStatus ", str(e))
+    
     
     def addTrustEffectCalculation(self,dt_id,indirect_con_dt,hop_count,trust_effect,trust_score):
         try:
@@ -355,12 +375,30 @@ class DTTSASupportServices:
         ret_value = "Started"
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Finished' and status=1 order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name like 'QoS_%' and execution_status='Finished' and status=1 order by msg desc;")
         # cur.execute('select dt_id,avg(req_per_sec_mean) as avg_req_per_sec,avg(time_per_req_min) as avg_time_per_req_min,avg(time_per_req_max) as avg_time_per_req_max,avg(time_per_req_mean) as avg_time_per_req_mean,avg(sum_response_time) as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
         finished = cur.fetchall()
         cur.close()
         cur = conn.cursor()
-        cur.execute("select * from dttsa_execution_status_tbl where function_name='QoS' and execution_status='Started' and status=1  order by msg desc;")
+        cur.execute("select * from dttsa_execution_status_tbl where function_name like 'QoS_%' and execution_status='Started' and status=1  order by msg desc;")
+        started = cur.fetchall()
+        cur.close()
+        if len(finished) == 0 and len(started) == 0:
+            ret_value = "None"
+        elif len(finished) == len(started):
+            ret_value = "Finished"
+        return ret_value
+    
+    def qosSpecificTestExecutionStatus(self,test_type):
+        ret_value = "Started"
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute("select * from dttsa_execution_status_tbl where function_name like %s and execution_status='Finished' and status=1 order by msg desc;",("QoS_"+test_type,))
+        # cur.execute('select dt_id,avg(req_per_sec_mean) as avg_req_per_sec,avg(time_per_req_min) as avg_time_per_req_min,avg(time_per_req_max) as avg_time_per_req_max,avg(time_per_req_mean) as avg_time_per_req_mean,avg(sum_response_time) as avg_response_time from api_qos_records_tbl group by dt_id order by dt_id;')
+        finished = cur.fetchall()
+        cur.close()
+        cur = conn.cursor()
+        cur.execute("select * from dttsa_execution_status_tbl where function_name like %s and execution_status='Started' and status=1  order by msg desc;",("QoS_"+test_type,))
         started = cur.fetchall()
         cur.close()
         if len(finished) == 0 and len(started) == 0:
@@ -433,6 +471,7 @@ class DTTSASupportServices:
             cur.execute('update trust_effect_calculation_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update dt_trust_report_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update reputation_categorization_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dttsa_qos_staging_tbl set status=%s where status=1;',(iteration_count,))
             conn.commit()
             cur.close()
             conn.close()
@@ -512,6 +551,9 @@ class DTTSASupportServices:
         records = cur.fetchall()
         cur.close()
         return records
+    
+    
+        
 
     
 

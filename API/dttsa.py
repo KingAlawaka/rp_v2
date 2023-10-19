@@ -60,6 +60,16 @@ app.config['dependency_creation'] = "False"
 app.config['trend_analysis_job'] = "False"
 app.config['iteration_count'] = 0 #update inside the trustScoreCalculation()
 app.config['analysis_started'] = False
+app.config['API_analysis_counter'] = 0
+
+app.config['qos_analysis_started'] = False
+app.config['qos_init_test_started'] = False
+app.config['qos_pn_test_started'] = False
+app.config['qos_pc_test_started'] = False
+app.config['qos_pm_test_started'] = False
+app.config['qos_analysis_ongoing'] = False
+app.config['qos_number_of_tests'] = 5
+app.config['qos_loop_times'] = 1
 
 '''
 Check API vulnerbility finished results for submitted DTs
@@ -67,6 +77,7 @@ Check API vulnerbility finished results for submitted DTs
 def runSchedulerJobs():
     print("SchedularJobs Initiated")
     scheduler.add_job(id="checkAPIResults", replace_existing=True, func=checkAPIResults,trigger="interval",seconds = 30)
+    scheduler.add_job(id="qosAnalysisLogic", replace_existing=True, func=qosAnalysisLogic,trigger="interval",seconds = 30)
     scheduler.start()
 
 def generatePasswordHash(password):
@@ -78,29 +89,18 @@ def checkAPIResults():
     dttsaSupportServices.recordExecutionStatus("API","Started")
     apiAnalyzer.checkSubmittedAPI()
 
-    # QoSThreadCreated = False
-    # for thread in threading.enumerate():
-    #     if thread.name == "QoS":
-    #         QoSThreadCreated = True
-    
-    # if not QoSThreadCreated:
-    #     qosThread = threading.Thread(target=qosAnalyzer.QoSTest,args=(dRecieved,),name="QoS")
-    #     qosThread.daemon = True
-    #     qosThread.start()
-    #     print("QoS analysis started")
-
-def runQoSTest(test_count=0):
+def runQoSTest(test_type="i",concurrent_users=1,loop_times=1,iteration_count=0):
     QoSThreadCreated = False
     for thread in threading.enumerate():
-        if thread.name == "QoS":
+        if thread.name == "QoS_"+test_type:
             QoSThreadCreated = True
     
     if not QoSThreadCreated:
-        qosThread = threading.Thread(target=qosAnalyzer.QoSTest,args=(test_count,),name="QoS")
+        qosThread = threading.Thread(target=qosAnalyzer.QoSTest,args=(test_type,concurrent_users,loop_times,3600,5,0,iteration_count),name="QoS_"+test_type)
         qosThread.daemon = True
         qosThread.start()
-        print("QoS analysis started")
-        dttsaSupportServices.recordExecutionStatus("QoS","Started",test_count)
+        print("QoS_"+test_type+ " Test started")
+        dttsaSupportServices.recordExecutionStatus("QoS_"+test_type,"Started",test_type)
 
 def runBackupQoSTest(test_count=0):
     QoSThreadCreated = False
@@ -117,10 +117,10 @@ def runBackupQoSTest(test_count=0):
 
 def runAPIAnalysis():
     # iteration count * -1 because using status coloumn
-    apis_to_check = dttsaSupportServices.getAPIsToAnalyze('n','n','API Security',int(app.config['iteration_count'])*-1)
+    apis_to_check = dttsaSupportServices.getAPIsToAnalyze('n','c','API Security',int(app.config['iteration_count'])*-1)
     for api in apis_to_check:
         apiAnalyzer.checkAPIVulnerbilities(api[1],api[0],api[2],api[5],api[4])
-    malicious_apis = dttsaSupportServices.getAPIsToAnalyze('m','c','API Security',int(app.config['iteration_count'])*-1)
+    malicious_apis = dttsaSupportServices.getAPIsToAnalyze('m','m','API Security',int(app.config['iteration_count'])*-1)
     for mapi in malicious_apis:
         previous_api_record = dttsaSupportServices.getPreviousAPIRecords(mapi[1],mapi[0],int(app.config['iteration_count'])*-1)
         for papi in previous_api_record:
@@ -237,6 +237,21 @@ def generateDependecyGraph():
     plt.savefig(save_loc, format="PNG")
     plt.clf()
 
+@app.route("/configqos")
+def configureQoSParameters():
+    test_count= request.args.get('numbertest')
+    loop_count= request.args.get('loopcount')
+    app.config.update(
+        qos_number_of_tests = test_count
+    )
+
+    app.config.update(
+        qos_loop_times = loop_count
+    )
+    msg = {"status" : "QoS Config Done"}, 200
+    return msg
+
+
 @app.route("/analyze")
 def startAnalayze():
     '''
@@ -257,8 +272,9 @@ def startAnalayze():
             app.config.update(
                 analysis_started = True
             )
-            runQoSTest(int(app.config['iteration_count']))
-            runBackupQoSTest(int(app.config['iteration_count']))
+            # runQoSTest(int(app.config['iteration_count']),5,2)
+            # qosAnalysisManagement()
+            runBackupQoSTest(test_count=int(app.config['iteration_count']))
             #TODO API analysis get all normal and submit again for analyze
             if int(app.config['iteration_count']) > 0:
                 runAPIAnalysis()
@@ -269,10 +285,14 @@ def startAnalayze():
             ret_value1 = dttsaSupportServices.qosExecutionStatus()
             ret_value2 = dttsaSupportServices.backupQoSExecutionStatus()
             ret_value3 = apiAnalyzer.APISecurityAnalysisStatus()
-            if ret_value1 == "Finished" and ret_value2 == "Finished" and ret_value3 == "Finished":
+            if ret_value1 == "Finished" and ret_value2 == "Finished" and ret_value3 == "Finished" and app.config['qos_analysis_ongoing'] == False:
                 evaluation()
                 app.config.update(
                     analysis_started = False
+                )
+
+                app.config.update(
+                    qos_analysis_started = False
                 )
                 
                 reputationAnalysis()
@@ -280,10 +300,34 @@ def startAnalayze():
                 msg = "Evaluation completed, analysis completed"
             elif ret_value1== "Started" or ret_value2== "Started" or ret_value3 == "Started":
                 msg = "Analysis Ongoing"
+            elif ret_value1 == "Finished" and ret_value2 == "Finished" and app.config['qos_analysis_ongoing'] == False:
+                counter = int(app.config['API_analysis_counter']) + 1
+                app.config.update(
+                    API_analysis_counter = counter
+                )
+                if int(app.config['API_analysis_counter']) == 3:
+                    evaluation()
+                    app.config.update(
+                        analysis_started = False
+                    )
+
+                    app.config.update(
+                        qos_analysis_started = False
+                    )
+
+                    app.config.update(
+                    API_analysis_counter = 0
+                    )
+                
+                    reputationAnalysis()
+                    reputationAttackAnalysis()
+                    msg = "Evaluation completed, analysis completed"
+                else:
+                    msg = "Waiting for API analysis "+str(app.config['API_analysis_counter'])
             else:
-                msg = "Analysis not started "+ret_value1+" "+ret_value2+" "+ret_value3
+                msg = "Analysis not started "+ str(submit_percentage) + "QoS:"+ret_value1+" BQoS:"+ret_value2+" API:"+ret_value3
     else:
-        msg = "No DTs or submitted values"
+        msg = "No DTs or No submitted values "+str(num_DTs_submitted_final_values)+":"+str(num_DTs)
 
     return {"status":str(msg)},200
 
@@ -360,6 +404,13 @@ def reputationAttackAnalysis():
         print(trust_reports_values)
         print(trust_reports_qos)
         print("[][][][]")
+
+@app.route("/test")
+def testService():
+    # runQoSTest(thread_id=1,test_count=0,concurrent_users=1,loop_times=1)
+    # runQoSTest(thread_id=2,test_count=0,concurrent_users=1,loop_times=1)
+    re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
+    return re
 
 
 @app.route("/save")
@@ -533,6 +584,215 @@ def trustScoreCalculation():
         print("n "+str(n_count)+" c "+str(c_count)+" m "+str(m_count))
         print(trust_score)
         dttsaSupportServices.addTrustScoresToTrustScoresTbl(app.config['iteration_count'],dt,n_count,c_count,m_count,trust_score)
+
+def qosAnalysisEvaluation(test_type):
+    qos_low = 0.5
+    qos_mid = 0.6
+    qos_high= 1.0
+
+    dts = dttsaSupportServices.getDTIDs()
+    for dt in dts:
+        low_count = 0
+        mid_count = 0
+        high_count = 0
+        qos_counts = []
+        dttsa_qos_counts = []
+        values_qos = dttsaSupportServices.getDTDataByType(dt[0],"QoS")
+        values_qos_dttsa = dttsaSupportServices.getDTTSAQoSValuesByTestType(dt[0],test_type)
+        if len(values_qos) != 0:
+            for v in values_qos:
+                val = round(float(v[7]),1)
+                if val <= qos_low:
+                    low_count = low_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],1,0,0)
+                elif val >= qos_mid and val <= qos_high:
+                    mid_count = mid_count+1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,1,0)
+                else:
+                    high_count = high_count +1
+                    dttsaSupportServices.dtTrustReportTbl(v[1],v[2],v[3],0,0,1)
+            
+            qos_counts = [low_count,mid_count,high_count]
+        low_count = 0
+        mid_count = 0
+        high_count = 0
+
+        for v in values_qos_dttsa:
+            val = round(float(v[11]),1)
+            if val <= qos_low:
+                low_count = low_count+1
+            elif val >= qos_mid and val <= qos_high:
+                mid_count = mid_count+1
+            else:
+                high_count = high_count +1
+        dttsa_qos_counts = [low_count,mid_count,high_count]
+        print(qos_counts)
+        print(dttsa_qos_counts)
+
+        if (dttsa_qos_counts[0] > 0 and dttsa_qos_counts[1]== 0 and dttsa_qos_counts[2] == 0):
+            if len(qos_counts) > 0:
+                if (qos_counts[0]>0 and qos_counts[1]==0 and qos_counts[2]==0):
+                    print("Def Normal DT")
+                    weighted_avg = weightedAvg(qos_counts[0],qos_counts[1],qos_counts[2])
+                    dttsaSupportServices.recordTrustScores(dt[0],"DT QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(qos_counts))
+                    weighted_avg = weightedAvg(dttsa_qos_counts[0],dttsa_qos_counts[1],dttsa_qos_counts[2])
+                    dttsaSupportServices.recordTrustScores(dt[0],"DTTSA QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(dttsa_qos_counts))
+            else:
+                print("Def Normal DT only DTTSA")
+                weighted_avg = weightedAvg(dttsa_qos_counts[0],dttsa_qos_counts[1],dttsa_qos_counts[2])
+                dttsaSupportServices.recordTrustScores(dt[0],"DTTSA QoS",low_count,mid_count,high_count,weighted_avg,DTTypeDetector(dttsa_qos_counts))
+        else:
+            temp_type = DTTypeDetector(dttsa_qos_counts)
+            dttsaSupportServices.addQoSStaging(dt[0],dttsa_qos_counts[0],dttsa_qos_counts[1],dttsa_qos_counts[2],"p"+temp_type,test_type)
+
+def qosAnalysisLogic():
+    print("£££ qosAnalysisLogic Called £££")
+    qos_low = 0.5
+    qos_mid = 0.6
+    qos_high= 1.0
+
+    low_count = 0
+    mid_count = 0
+    high_count = 0
+
+    #Two different number of tests for APIs will be carriedout and these values config here
+    x_test_count = 5
+    # y_test_count = 10
+
+    # qos_analysis_status = dttsaSupportServices.qosExecutionStatus()
+    qos_analysis_status = ""
+    print(app.config['qos_analysis_started'])
+    # print(qos_analysis_status)
+    print(app.config['analysis_started'])
+    
+
+    if (int(app.config['iteration_count']) == 0):
+        print("__qos test statuses__")
+        init_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
+        pn_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("pn")
+        pc_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("pc")
+        pm_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("pm")
+        print(init_test_status)
+        print(pn_test_status)
+        print(pc_test_status)
+        print(pm_test_status)
+
+        if(pm_test_status=="Finished"):
+            app.config.update(
+                qos_pm_test_started = False
+            )
+
+        if(pn_test_status=="Finished"):
+            app.config.update(
+                qos_pn_test_started = False
+            )
+
+        if(pc_test_status=="Finished"):
+            app.config.update(
+                qos_pm_test_started = False
+            )
+
+        if (init_test_status == pn_test_status == pc_test_status == pm_test_status) and (init_test_status == "None" or init_test_status == "Finished"):
+            qos_analysis_status = init_test_status
+        else:
+            qos_analysis_status = "Started"
+        
+        print(qos_analysis_status)
+        print(int(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times'])))
+        if  app.config['qos_analysis_started'] == False and (qos_analysis_status == "None" or qos_analysis_status == "Finished") and app.config['analysis_started'] == True:
+            print("Analysis Started and No QoS active tests")
+            app.config.update(
+                    qos_analysis_started = True
+            )
+
+            app.config.update(
+                qos_analysis_ongoing = True
+            )
+
+        
+        if init_test_status != 'Finished' and app.config['qos_analysis_started'] == True and app.config['qos_init_test_started'] == False and app.config['qos_pn_test_started'] == False and app.config['qos_pc_test_started'] == False and app.config['qos_pm_test_started'] == False:
+            print("Init test")
+            app.config.update(
+                qos_init_test_started = True
+            )
+            app.config.update(
+                qos_analysis_ongoing = True
+            )
+            runQoSTest(test_type="i",concurrent_users=int(app.config['qos_number_of_tests']),loop_times=int(app.config['qos_loop_times']))
+
+            
+        if init_test_status == 'Finished' and app.config['qos_analysis_started'] == True and app.config['qos_init_test_started'] == True:
+            print("initial categorization")
+            qosAnalysisEvaluation("i")
+            app.config.update(
+                qos_init_test_started = False
+            )
+
+        if init_test_status == 'Finished' and app.config['qos_analysis_started'] == True and app.config['qos_init_test_started'] == False and app.config['qos_pn_test_started'] == False and app.config['qos_pc_test_started'] == False and app.config['qos_pm_test_started'] == False:
+            print("get dts from staging and run concurrent tests for pn,pc,and pm")
+            if  (pm_test_status !="Finished" and pc_test_status!="Finished" and pm_test_status!="Finished") or (pm_test_status !="Started" and pc_test_status!="Started" and pm_test_status!="Started"):
+                app.config.update(
+                    qos_pn_test_started = True
+                )
+                runQoSTest(test_type="pn",concurrent_users=int(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times'])),loop_times=int(app.config['qos_loop_times'])*2)
+
+                app.config.update(
+                    qos_pc_test_started = True
+                )
+                runQoSTest(test_type="pc",concurrent_users=int(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times'])),loop_times=int(app.config['qos_loop_times'])*2)
+
+                app.config.update(
+                    qos_pm_test_started = True
+                )
+
+                app.config.update(
+                    qos_analysis_ongoing = True
+                )
+                runQoSTest(test_type="pm",concurrent_users=int(app.config['qos_number_of_tests']),loop_times=int(app.config['qos_loop_times']))
+            
+            #get dts from staging and run concurrent tests for pn,pc,and pm
+        
+        if (app.config['qos_analysis_started'] == True and pm_test_status =="Finished" and pc_test_status =="Finished" and pm_test_status =="Finished" and qos_analysis_status=="Finished"):
+            print("P tests finished")
+            app.config.update(
+                qos_analysis_ongoing = False
+            )
+            # print("initial categorization")
+            # qosAnalysisEvaluation("i")
+            # app.config.update(
+            #     qos_analysis_started = False
+            # )
+    else:
+        print("__"+ str(app.config['iteration_count'])+" test__")
+        n_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("n")
+        c_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("c")
+        m_test_status = dttsaSupportServices.qosSpecificTestExecutionStatus("m")
+
+        print(n_test_status)
+        print(c_test_status)
+        print(m_test_status)
+
+        if (n_test_status == c_test_status == m_test_status):
+            qos_analysis_status = n_test_status
+        else:
+            qos_analysis_status = "Started"
+
+        if  app.config['qos_analysis_started'] == False and (qos_analysis_status != "Started" or qos_analysis_status == "None" ) and app.config['analysis_started'] == True:
+            print("Analysis Started and No QoS active tests")
+            app.config.update(
+                    qos_analysis_started = True
+            )
+            i_count = int(app.config['iteration_count']) * -1
+            print(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times']))
+            runQoSTest(test_type="m",concurrent_users=int(app.config['qos_number_of_tests']),loop_times=int(app.config['qos_loop_times']),iteration_count=i_count)
+            runQoSTest(test_type="c",concurrent_users=int(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times'])),loop_times=int(app.config['qos_loop_times'])*2,iteration_count=i_count)
+            runQoSTest(test_type="n",concurrent_users=int(int(app.config['qos_number_of_tests'])/int(app.config['qos_loop_times'])),loop_times=int(app.config['qos_loop_times'])*2,iteration_count=i_count)
+        # else:
+        #     if n_test_status == "Finished" and c_test_status == "Finished" and m_test_status=="Finished" and qos_analysis_status == "Finished":
+        #         app.config.update(
+        #             qos_analysis_started = False
+        #         )
+
 
 @app.route('/eval')
 def evaluation():
@@ -917,7 +1177,9 @@ def testBackupServices():
 @app.route('/testqos')
 def testqos():
     test_count= request.args.get('testcount')
-    runQoSTest(test_count)
+    c_users = int(request.args.get('c'))
+    loop = int(request.args.get('l'))
+    runQoSTest(iteration_count=test_count,concurrent_users=c_users,loop_times=loop)
     msg = {"status" : "QoS Test Started"}, 200
     return msg
 

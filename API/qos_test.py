@@ -163,7 +163,7 @@ class TestAPI:
     def test_post_headers_body_json(self,url,sample_json):
         #payload = {"key1": 1, "key2": "value2"}
         #payload = {"msg":"test","sender":"sender"}
-        payload = sample_json
+        payload = {"value": -111111111,"DT_ID" : -111111111,"API_ID" : -111111111}
         # No need to specify common headers as it is taken cared of by common self.post() function.
         # headers = {'Content-Type': 'application/json' }
 
@@ -171,7 +171,13 @@ class TestAPI:
         #url = "https://httpbin.org/post"
         #url = "http://172.17.0.1:9100/send/"
         #url = urlToTest
-        resp = self.post(url, data=json.dumps(payload, indent=4))
+        # print(url)
+        # print(json.dumps(sample_json))
+        # print(json.dumps(payload))
+        resp = self.post(url, data=sample_json)
+        
+        # print(resp)
+        # print(resp.text)
         # assert resp != None
         if resp == None:
             log.error("Test %s failed with exception." % inspect.stack()[0][3])
@@ -250,12 +256,17 @@ class TestAPI:
                 # API - test_mock_service:
                 
                 if request_type =="GET":
+                    print("GET call ",url)
                     test_result, elapsed_time = self.test_mock_service(url)
                     self.queue_results.put(["test_mock_service", test_result, elapsed_time])
-                else:
+                elif request_type =="POST":
+                    print("Post call ",url)
                     #TODO temp post requests are not checked
                     ii = 0
-                    #test_result, elapsed_time = self.test_post_headers_body_json(url,sample_json)
+                    test_result, elapsed_time = self.test_post_headers_body_json(url,sample_json)
+                    print(test_result)
+                    print(elapsed_time)
+                    self.queue_results.put(['test_post_headers_body_json', test_result, elapsed_time])
                 
                 # put results into a queue for statistics
                 # self.queue_results.put(["test_mock_service", test_result, elapsed_time])
@@ -391,13 +402,15 @@ class TestAPI:
         Return: None for exception
         """
 
-        # append common headers if none
+        # append common headers if none  headers = {'access-token':'test val'}
         headers_new = headers
         if amend_headers == True:
             if "Content-Type" not in headers_new:
                 headers_new["Content-Type"] = r"application/json"
             if "User-Agent" not in headers_new:
                 headers_new["User-Agent"] = "Python Requests"
+            if "access-token" not in headers_new:
+                headers_new["access-token"] = "test val"
 
         # send post request
         try:

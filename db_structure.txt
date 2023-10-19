@@ -55,6 +55,7 @@ create table api_security_check_tbl
 	high_count int,
 	report text,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	completed_timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
 
@@ -94,6 +95,7 @@ create table api_qos_records_tbl
 	sum_response_time float,
 	tot_failed_reqs float,
 	tot_exception_reqs float,
+	test_type varchar(10),
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
@@ -277,6 +279,20 @@ create table reputation_categorization_tbl(
 	neg_count int,
 	eq_count int,
 	category text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+-- add
+create table dttsa_qos_staging_tbl(
+	id serial,
+	dt_id int,
+	api_id int,
+	low_count int,
+	mid_count int,
+	high_count int,
+	category text,
+	test_type text,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );

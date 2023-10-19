@@ -58,7 +58,9 @@ class ResilienceAnalyzer:
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from backup_service_locations_tbl inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id where api_qos_tbl.test_count=%s and backup_service_locations_tbl.status = 1 and api_qos_tbl.status = 1 and api_tbl.status = 1 order by api_tbl.id;',(str(test_count)))
+            # cur.execute('select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from backup_service_locations_tbl inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id where api_qos_tbl.test_count=%s and backup_service_locations_tbl.status = 1 and api_qos_tbl.status = 1 and api_tbl.status = 1 order by api_tbl.id;',(test_count,))
+            #TODO remove test count because normal qos is updating it 
+            cur.execute('select distinct api_tbl.id as api_id, api_tbl.dt_id, backup_service_locations_tbl.ip as backup_ip,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from backup_service_locations_tbl inner join api_qos_tbl on api_qos_tbl.dt_id = backup_service_locations_tbl.dt_id inner join api_tbl on api_tbl.dt_id = api_qos_tbl.dt_id where backup_service_locations_tbl.status = 1 and api_qos_tbl.status = 1 and api_tbl.status = 1 order by api_tbl.id;')
             BackupServiceAPIs = cur.fetchall()
             conn.commit()
             cur.close()

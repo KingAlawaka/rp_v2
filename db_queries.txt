@@ -133,3 +133,29 @@ TRUNCATE api_qos_records_tbl,api_qos_tbl,api_security_check_tbl,api_tbl,backup_q
 
 ### get sub count
 select sub_dt_id,count(sub_dt_id) from dt_sub_tbl group by sub_dt_id;
+
+### cloud useful 
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-15 order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+
+select distinct status from dt_type_tbl;
+
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -2 and function_name = 'QoS_pm' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -4 and function_name = 'QoS_n' order by timestamp asc;
+
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by timestamp asc;
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
+
+select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+
+select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
+
+select * from dttsa_trust_calculations_tbl where dt_id=15 and status=-5;
+select * from api_qos_records_tbl where status=-5 and dt_id=2;
+
+select * from backup_qos_records_tbl;

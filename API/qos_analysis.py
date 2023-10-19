@@ -47,11 +47,11 @@ class QoSAnalyzer:
             print("Error: qos_analysis.py updateQoSTestCount()")
             print(e)
     
-    def addQoSRecords(self,results):
+    def addQoSRecords(self,results,test_type):
         try:
             conn = self.dbConnection.get_db_connection()
             cur = conn.cursor()
-            cur.execute('insert into api_qos_records_tbl (DT_ID,API_ID,start_time,end_time ,test_duration ,req_per_sec_mean ,tot_req ,tot_tested_time ,tot_pass_tests ,time_per_req_min ,time_per_req_mean ,time_per_req_max ,sum_response_time ,tot_failed_reqs ,tot_exception_reqs) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);',(results[0],results[1],results[2],results[3],results[4],results[5],results[6],results[7],results[8],results[9],results[10],results[11],results[12],results[13],results[14]))
+            cur.execute('insert into api_qos_records_tbl (DT_ID,API_ID,start_time,end_time ,test_duration ,req_per_sec_mean ,tot_req ,tot_tested_time ,tot_pass_tests ,time_per_req_min ,time_per_req_mean ,time_per_req_max ,sum_response_time ,tot_failed_reqs ,tot_exception_reqs,test_type) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);',(results[0],results[1],results[2],results[3],results[4],results[5],results[6],results[7],results[8],results[9],results[10],results[11],results[12],results[13],results[14],test_type))
             #cur.execute('insert into api_security_check_tbl (DT_ID,API_ID,scan_id) values (%s,%s,%s);',(DT_ID,API_ID,scan_id))
             conn.commit()
             cur.close()
@@ -86,26 +86,116 @@ class QoSAnalyzer:
             conn.close()
         except Exception as e:
             print("error: addDTReports ", str(e))
+
+    # def getQoSLowMidHighCount(self,)
+    def getDTAPIsbyPotentialCategory(self,potential_category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select api_tbl.dt_id,api_tbl.id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from api_tbl join dttsa_qos_staging_tbl on api_tbl.dt_id = dttsa_qos_staging_tbl.dt_id where api_tbl.status=1 and dttsa_qos_staging_tbl.status=1 and dttsa_qos_staging_tbl.category = %s;',(potential_category,))
+        records = cur.fetchall()
+        cur.close()
+        return records
     
-    def QoSTest(self,test_count=0):
-        APIs = self.getAPIsForQoSAnalysis(test_count)
-        #time.sleep(40)
-        qosTest = QoSTest()
-        for api in APIs:
-            # req_type = api[3]
-            # url = api[2]
-            # if url == "http://127.0.0.1:9100/sendpost/":
-            #     req_type = "GET"
-            self.addQoSStatus("QoS","Running","For API "+str(api))
-            #self.addQoSStatus("QoS","Finished")
-            results = qosTest.startTest(api[3],api[2],api[4])
-            results.insert(0,api[1])
-            results.insert(0,api[0])
-            self.addQoSRecords(results)
-            self.updateQoSTestCount(api[0],api[1])
-            print(results)
+    def getDTAPIsbyPreviousDTType(self,iteration_count,dt_type,category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct api_tbl.dt_id,api_tbl.id,api_tbl.url,api_tbl.type,api_tbl.sample_json,api_tbl.user_auth_token from api_tbl join dttsa_trust_calculations_tbl on api_tbl.dt_id = dttsa_trust_calculations_tbl.dt_id where api_tbl.status=1 and dttsa_trust_calculations_tbl.status=%s and dttsa_trust_calculations_tbl.dt_type_prediction = %s and dttsa_trust_calculations_tbl.category=%s;',(iteration_count,dt_type,category))
+        records = cur.fetchall()
+        cur.close()
+        return records
+
+    
+    def QoSTest(self,test_type="i",concurrent_users=5,loop_times=2,test_time=3600,stats_interval=5,ramp_up=0,iteration_count=0):
+        if test_type == "i":
+            #initial logic
+            APIs = self.getAPIsForQoSAnalysis(0)
+            qosTest = QoSTest(concurrent_users,loop_times,test_time,stats_interval,ramp_up)
+            for api in APIs:
+                # req_type = api[3]
+                # url = api[2]
+                # if url == "http://127.0.0.1:9100/sendpost/":
+                #     req_type = "GET"
+                self.addQoSStatus("QoS_"+test_type,"Running","For API "+str(api))
+                #self.addQoSStatus("QoS","Finished")
+                results = qosTest.startTest(api[3],api[2],api[4]) #index 9 time per req mean
+                results.insert(0,api[1]) #adding DT ID and API ID to the results and pass it
+                results.insert(0,api[0])
+                self.addQoSRecords(results,test_type)
+                self.updateQoSTestCount(api[0],api[1])
+                print(results)
+        elif test_type == "n":
+            APIs = self.getDTAPIsbyPreviousDTType(iteration_count,test_type,"DTTSA QoS")
+            print("api count for qos n:"+str(len(APIs))+ " "+str(iteration_count))
+            #time.sleep(40)
+            qosTest = QoSTest(concurrent_users,loop_times,test_time,stats_interval,ramp_up)
+            for api in APIs:
+                # req_type = api[3]
+                # url = api[2]
+                # if url == "http://127.0.0.1:9100/sendpost/":
+                #     req_type = "GET"
+                self.addQoSStatus("QoS_"+test_type,"Running","For API "+str(api))
+                #self.addQoSStatus("QoS","Finished")
+                results = qosTest.startTest(api[3],api[2],api[4])
+                results.insert(0,api[1])
+                results.insert(0,api[0])
+                self.addQoSRecords(results,test_type)
+                self.updateQoSTestCount(api[0],api[1])
+                print(results)
+        elif test_type == "c":
+            APIs = self.getDTAPIsbyPreviousDTType(iteration_count,test_type,"DTTSA QoS")
+            print("api count for qos c:"+str(len(APIs))+ " "+str(iteration_count))
+            #time.sleep(40)
+            qosTest = QoSTest(concurrent_users,loop_times,test_time,stats_interval,ramp_up)
+            for api in APIs:
+                # req_type = api[3]
+                # url = api[2]
+                # if url == "http://127.0.0.1:9100/sendpost/":
+                #     req_type = "GET"
+                self.addQoSStatus("QoS_"+test_type,"Running","For API "+str(api))
+                #self.addQoSStatus("QoS","Finished")
+                results = qosTest.startTest(api[3],api[2],api[4])
+                results.insert(0,api[1])
+                results.insert(0,api[0])
+                self.addQoSRecords(results,test_type)
+                self.updateQoSTestCount(api[0],api[1])
+                print(results)
+        elif test_type == "m":
+            APIs = self.getDTAPIsbyPreviousDTType(iteration_count,test_type,"DTTSA QoS")
+            print("api count for qos m:"+str(len(APIs))+ " "+str(iteration_count))
+            #time.sleep(40)
+            qosTest = QoSTest(concurrent_users,loop_times,test_time,stats_interval,ramp_up)
+            for api in APIs:
+                # req_type = api[3]
+                # url = api[2]
+                # if url == "http://127.0.0.1:9100/sendpost/":
+                #     req_type = "GET"
+                self.addQoSStatus("QoS_"+test_type,"Running","For API "+str(api))
+                #self.addQoSStatus("QoS","Finished")
+                results = qosTest.startTest(api[3],api[2],api[4])
+                results.insert(0,api[1])
+                results.insert(0,api[0])
+                self.addQoSRecords(results,test_type)
+                self.updateQoSTestCount(api[0],api[1])
+                print(results)
+        else:
+            APIs = self.getDTAPIsbyPotentialCategory(test_type)
+            #time.sleep(40)
+            qosTest = QoSTest(concurrent_users,loop_times,test_time,stats_interval,ramp_up)
+            for api in APIs:
+                # req_type = api[3]
+                # url = api[2]
+                # if url == "http://127.0.0.1:9100/sendpost/":
+                #     req_type = "GET"
+                self.addQoSStatus("QoS_"+test_type,"Running","For API "+str(api))
+                #self.addQoSStatus("QoS","Finished")
+                results = qosTest.startTest(api[3],api[2],api[4])
+                results.insert(0,api[1])
+                results.insert(0,api[0])
+                self.addQoSRecords(results,test_type)
+                self.updateQoSTestCount(api[0],api[1])
+                print(results)
         #ßprint(APIs)
-        self.addQoSStatus("QoS","Finished",test_count)
+        self.addQoSStatus("QoS_"+test_type,"Finished",test_type)
         print("Thread finished")
 
     
