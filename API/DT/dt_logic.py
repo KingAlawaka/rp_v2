@@ -20,7 +20,11 @@ class DTLogic:
         self.dt_id = -1
         self.valueRanges = self.simHelper.generateRandomValueRanges()
         random.seed(rand_seed)
+        self.reputation_attack = False
         pass
+
+    def enableReputationAttacks(self,flag):
+        self.reputation_attack = flag
     
     def setDTID(self,dt_id):
         self.dt_id=dt_id
@@ -67,6 +71,7 @@ class DTLogic:
         return temp_min
 
     def generateValue(self):
+        print("DT type: ",self.dt_type)
         normalDT_value_selection_limit = int(self.config['sim_parameters']['normalDT_value_selection_limit'])
         changingDT_value_selection_limit = int(self.config['sim_parameters']['changingDT_value_selection_limit'])
         if self.dt_type == "m":
@@ -171,6 +176,11 @@ class DTLogic:
                     val.append(v[0])
                 #print(values[0]["value"])
                 stdValue = round(statistics.stdev(val),3)
+                # print("std values")
+                # print(stdValue)
+                # if(self.reputation_attack):
+                #     stdValue = stdValue + 1
+                # print(stdValue)
                 self.dbHelper.addStdevValue(str(c[0]),stdValue)
                 print("DT ID ", str(c[0])," STDEV ", str(stdValue))
         except Exception as e:
@@ -187,6 +197,11 @@ class DTLogic:
                     val.append(v[0])
                 #print(values[0]["value"])
                 stdValue = round(statistics.stdev(val),3)
+                # print("std values")
+                # print(stdValue)
+                # if(self.reputation_attack):
+                #     stdValue = stdValue + 1
+                # print(stdValue)
                 self.dbHelper.addQoSStdevValue(str(c[0]),stdValue)
                 print("QoS DT ID ", str(c[0])," STDEV ", str(stdValue))
         except Exception as e:
@@ -203,7 +218,11 @@ class DTLogic:
                 for v in qos_values:
                     val.append(v[0])
                 stdValue = round(statistics.stdev(val),4)
-                self.dbHelper.addFinalValueTbl(str(c[0]),'QoS',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
+                avgQoS = round(statistics.mean(val),3)
+                if(self.reputation_attack):
+                    stdValue = stdValue + 1
+                    avgQoS = avgQoS + 1
+                self.dbHelper.addFinalValueTbl(str(c[0]),'QoS',stdValue,str(min(val)),str(max(val)),str(avgQoS))
                 # resQoS.append("DT_ID "+str(c[0])+" QoS STD: "+str(stdValue))
                 # resQoS.append("DT_ID "+str(c[0])+" QoS min: "+str(min(val)))
                 # resQoS.append("DT_ID "+str(c[0])+" QoS max: "+str(max(val)))
@@ -215,6 +234,8 @@ class DTLogic:
                 for v in dt_values:
                     val.append(v[0])
                 stdValue = round(statistics.stdev(val),4)
+                if(self.reputation_attack):
+                    stdValue = stdValue + 1.5
                 self.dbHelper.addFinalValueTbl(str(c[0]),'Values',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
                 # resDTValues.append("DT_ID "+str(c[0])+" Val STD: "+str(stdValue))
                 # resDTValues.append("DT_ID "+str(c[0])+" Val min: "+str(min(val)))

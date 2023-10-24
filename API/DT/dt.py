@@ -127,7 +127,7 @@ else:
 
 if os.environ.get('dt_type') is None:
     # n= normal, m= malicious, c=changing
-    dt_types = ['n','m','c']
+    dt_types = 'n' #['n','m','c']
     app.config.update(
         dt_type = random.choice(dt_types)
     )
@@ -169,6 +169,18 @@ def getSavedSubList():
     else:
         subs = dtLogic.getExternalSubs()
     return {"Total records": len(subs),"subList":subs}
+
+@app.get('/changedttype')
+def changeDTType():
+    newDTType = request.args.get('dttype')
+    app.config.update(
+        dt_type = newDTType
+    )
+    simHelperNew = Simulation(num_iterations,num_DTs,CDT_goal,app.config['dt_type'],app.config['rand_seed'])
+    simHelper = simHelperNew
+    dtLogicNew = DTLogic(dbHelper,num_iterations,num_DTs,CDT_goal,app.config['dt_type'],app.config['rand_seed'])
+    dtLogic = dtLogicNew
+    return {"status": "Done"},200
 
 '''
 Generate values based on the DT value ranges
@@ -706,6 +718,11 @@ def testService():
     dtLogic.trendAnalysisExDTData()
     return "Ok"
 
+@app.get("/repattack")
+def reputationAttackEnabler():
+    dtLogic.enableReputationAttacks(True)
+    return "Ok"
+
 '''
 #send DTTSA, DT subscriptions from other DTs [Internal Subs]
 '''
@@ -901,21 +918,21 @@ def removeSchedulerJobs(job_name):
 
 def start_server(args):
     #TODO manual port set (cloud)
-    app.config.update(
-        port = "9100"
-    )
     # app.config.update(
-    #     port = args.port
+    #     port = "9100"
     # )
+    app.config.update(
+        port = args.port
+    )
     runSchedulerJobs()
-    # app.run(host='0.0.0.0',port=args.port)
-    app.run(host='0.0.0.0',port=9100)
+    app.run(host='0.0.0.0',port=args.port)
+    # app.run(host='0.0.0.0',port=9100)
     
 
 def main(args):
     #TODO manual db name set (cloud)
-    dbHelper.createDB("data1.db")
-    # dbHelper.createDB(args.db)
+    # dbHelper.createDB("data1.db")
+    dbHelper.createDB(args.db)
     # behaviour_edits = config["behaviour"]
     # behaviour_edits["normal_limit"] = args.nl
     # with open('environment_config.ini','w') as configfile:
@@ -928,8 +945,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
     #TODO commented out the parameter passing easy cloud deployment
-    # parser.add_argument('-port') #python3 dt.py -port <port>
-    # parser.add_argument('-db')
+    parser.add_argument('-port') #python3 dt.py -port <port>
+    parser.add_argument('-db')
     # parser.add_argument('-nl')
     args = parser.parse_args()
     main(args)

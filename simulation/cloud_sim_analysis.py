@@ -27,7 +27,7 @@ sched.start()
 
 number_of_simulations = 10
 
-main_server = "35.222.213.130"
+main_server = "34.31.200.232"
 
 us_server = "104.154.17.194"
 eu_server = "35.223.233.59"
@@ -105,7 +105,7 @@ def cloudSimStart():
 
 def startScheduleJob():
     print("Starts the Scheduled jobs")
-    sched.add_job(cloudSimStart,'interval', seconds=120, id='my_job_id',replace_existing=True)
+    sched.add_job(cloudSimStart,'interval', seconds=120, id='my_job_id')
     
 
 def stopScheduleJob():
