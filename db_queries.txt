@@ -210,6 +210,7 @@ select timestamp,completed_timestamp from api_security_check_tbl where status = 
 select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
 
 select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+j
 
 select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
 
