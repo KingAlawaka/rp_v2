@@ -8,7 +8,7 @@ import socket
 from urllib import response
 #from click import password_option
 import psycopg2
-from flask import Flask, jsonify,render_template,request,url_for,redirect,session,Response,send_file
+from flask import Flask, jsonify,render_template,request,url_for,redirect,session,make_response,Response,send_file
 import hashlib
 import requests
 from sqlalchemy import null
@@ -70,6 +70,7 @@ app.config['qos_pm_test_started'] = False
 app.config['qos_analysis_ongoing'] = False
 app.config['qos_number_of_tests'] = 5
 app.config['qos_loop_times'] = 1
+app.config['rep_attack_analysis_started'] = False
 
 '''
 Check API vulnerbility finished results for submitted DTs
@@ -78,7 +79,87 @@ def runSchedulerJobs():
     print("SchedularJobs Initiated")
     scheduler.add_job(id="checkAPIResults", replace_existing=True, func=checkAPIResults,trigger="interval",seconds = 30)
     scheduler.add_job(id="qosAnalysisLogic", replace_existing=True, func=qosAnalysisLogic,trigger="interval",seconds = 30)
+    scheduler.add_job(id="repAttackAnalysis", replace_existing=True, func=repAttackAnalysis,trigger="interval",seconds = 30)
     scheduler.start()
+
+def repAttackAnalysis():
+    if (int(app.config['iteration_count']) != 0 and app.config['rep_attack_analysis_started'] ):
+        print("Rep attack analysis started")
+    else:
+        print("Waiting for finish analysis")
+
+def repAttackCheck():
+    # app.config.update(
+    #     iteration_count = 1
+    # )
+    dts = dttsaSupportServices.getDTIDs()
+    # print(dts)
+    for dt in dts:
+        subs = dttsaSupportServices.getDTSubByCategory(dt[0],'POST')
+        print(dt[0])
+        impact_predictions = dttsaSupportServices.getDTValuesImpactPredictionsByCategory(dt[0],(int(app.config['iteration_count'])*-1),'QoS')
+        print(impact_predictions)
+        dttsa_qos_classification = dttsaSupportServices.getDTTrustCalculationsByCategory(dt[0],'DTTSA QoS',(int(app.config['iteration_count'])*-1))
+        print(dttsa_qos_classification)
+        majority_impact_prediction = ""
+        considerd_DTs = []
+        if len(impact_predictions)>=2:
+            majority_impact_prediction = impact_predictions[0][2]
+            for ip in impact_predictions:
+                if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT)")
+                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],"DT")
+                else:
+                    considerd_DTs.append(ip[0])
+
+                if dttsa_qos_classification[0][7] != ip[2] and ip[0] not in considerd_DTs:
+                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DTTSA vs DT)")
+                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],"DTTSA")
+                else:
+                    considerd_DTs.append(ip[0])
+            # prediction_list = []
+            # submitted_dt_ids = []
+            # hit_counts = []
+            # for i,ip in enumerate(impact_predictions):
+            #     prediction_list.append(ip[2])
+            #     submitted_dt_ids.append(ip[0])
+            #     hit_counts.append(ip[3])
+            # prediction_mismatch = DTSubmittedValueMismatchDetector(prediction_list)
+            # dt_id_mismatch = DTSubmittedValueMismatchDetector(submitted_dt_ids)
+            # hit_count_mismatch = DTSubmittedValueMismatchDetector(hit_counts)
+            # print(submitted_dt_ids)
+            # print(dt_id_mismatch)
+            # if prediction_mismatch and dt_id_mismatch:
+            #     print("different prediction from different DTs")
+            #     max_hit_count = max(hit_counts)
+            #     for i in range(len(prediction_list)):
+            #         if hit_counts[i] == max_hit_count:
+            # elif prediction_mismatch and dt_id_mismatch == False:
+            #     print("different predictions same DT")
+            # elif prediction_mismatch == False and dt_id_mismatch:
+            #     print("same prediction different DTs")
+            # v1 = impact_predictions[0][3]
+            # v2 = impact_predictions[1][3]
+            # if v1 == v2:
+            #     print("first two impact scores are equal")
+            #     if impact_predictions[0][0] == impact_predictions[1][0]:
+            #         print("first two equal impact socres from same DT")
+            #         majority_impact_prediction = impact_predictions[0][2]
+            #     else:
+            #         print("first two equal impact scores are not from same DT")
+            #         print("checking both predictions are same or not")
+            #         if impact_predictions[0][2] == impact_predictions[1][2]:
+            #             print("not equal DTs but same prediction")
+
+            # print(v1)
+        elif len(impact_predictions) == 1:
+            if dttsa_qos_classification[0][7] != impact_predictions[0][2]:
+                print("DT ", impact_predictions[0][0]," reporting DT ", impact_predictions[0][1], " incorrectly (DTTSA vs DT)")
+                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(impact_predictions[0][0],impact_predictions[0][1],"DTTSA")
+
+        print("______")
+
+
 
 def generatePasswordHash(password):
     hashedPassword = hashlib.md5(str(password)).hexdigest()
@@ -297,6 +378,7 @@ def startAnalayze():
                 
                 reputationAnalysis()
                 reputationAttackAnalysis()
+                repAttackCheck()
                 msg = "Evaluation completed, analysis completed"
             elif ret_value1== "Started" or ret_value2== "Started" or ret_value3 == "Started":
                 msg = "Analysis Ongoing"
@@ -321,6 +403,7 @@ def startAnalayze():
                 
                     reputationAnalysis()
                     reputationAttackAnalysis()
+                    repAttackCheck()
                     msg = "Evaluation completed, analysis completed"
                 else:
                     msg = "Waiting for API analysis "+str(app.config['API_analysis_counter'])
@@ -407,10 +490,12 @@ def reputationAttackAnalysis():
 
 @app.route("/test")
 def testService():
+    count = request.args.get('count')
     # runQoSTest(thread_id=1,test_count=0,concurrent_users=1,loop_times=1)
     # runQoSTest(thread_id=2,test_count=0,concurrent_users=1,loop_times=1)
-    re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
-    return re
+    # re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
+    repAttackCheck()
+    return "ok"
 
 
 @app.route("/save")
@@ -524,6 +609,13 @@ def DTTypeDetector(l):
                 return "m"
     else:
         return "-"
+    
+def DTSubmittedValueMismatchDetector(l):
+    init_value = l[0]
+    for i in l:
+        if i != init_value:
+            return True
+    return False
 
 def dtTypePredictor(l):
     res = []
@@ -965,6 +1057,10 @@ def evaluation():
         #         res.append(p[1])
         print(res)
         predicted_type = dtTypePredictor(res)
+        value_mismatch = DTSubmittedValueMismatchDetector(res)
+        # if value_mismatch:
+        #     #add to table
+        #     dttsaSupportServices.addVulnerableRepAttackPossibleDTs(dt[0])
         # print("Dt ID" , str(dt[0]))
         #TODO uncommented adding DTs calculations available back to DT type table
         type_record = dttsaSupportServices.getDTType(dt[0])
@@ -1027,6 +1123,58 @@ def index():
 
     return render_template('home/index.html',segment='index',orgList=orgList, DTs = DTs,qos_data=qos_data,trust_score=trust_score,te=te,trust_calculation_records=trust_calculation_records)
 
+@app.route('/repattacklog')
+def reputationAttackLog():
+    dt_id = request.args.get('dt')
+    attack_DT = request.args.get('attdt')   #DT id to attack on a selfpromote same DT ID
+    strength = request.args.get('strength') #up one impact level or maximum 1=mid 2=high
+    attack = request.args.get('attack') #bm = bad mouthing sp= self promoting
+    type_of_attack = request.args.get('type')   #i=individual g=group
+    initiator_dt_id = request.args.get('init_dt')
+    dttsaSupportServices.addDTReputationAttackLog(dt_id,attack_DT,attack,strength,type_of_attack,initiator_dt_id)
+    res = {"msg": "Rep attack logged"}
+    return make_response(res,200)
+
+def imapactCategorization(val,test_type):
+    low_count = 0
+    mid_count = 0
+    high_count = 0
+    if test_type == 'QoS': 
+        if val <= float(config['trust_calculation']['qos_low']):
+            low_count = low_count+1
+        elif val >= float(config['trust_calculation']['qos_mid']) and val <= float(config['trust_calculation']['qos_high']):
+            mid_count = mid_count+1
+        else:
+            high_count = high_count +1
+    elif test_type == 'Values':
+        if val <= float(config['trust_calculation']['value_low']):
+            low_count = low_count+1
+        elif val >= float(config['trust_calculation']['value_mid']) and val <= float(config['trust_calculation']['value_high']):
+            mid_count = mid_count+1
+        else:
+            high_count = high_count +1
+    impact_counts = [low_count,mid_count,high_count]
+    return impact_counts,DTTypeDetector(impact_counts)
+
+
+def dtValueImpactCategorization(dt_id,report):
+    for r in report:
+        sub_dt_id = str(r['dt_id'])
+        data_type = str(r['data_type'])
+        stdev_value = str(r['stdev_value'])
+        min = str(r['min'])
+        max = str(r['max'])
+        avg = str(r['avg'])
+        if data_type == 'QoS' and sub_dt_id != '-111111111' and sub_dt_id != dt_id:
+            category = data_type
+            val,classification = imapactCategorization(float(avg),'QoS')
+            dttsaSupportServices.addDTReportImpactCategories(dt_id,sub_dt_id,category,"avg",val[0],val[1],val[2],classification)
+        elif data_type == 'Values' and sub_dt_id != '-111111111' and sub_dt_id != dt_id:
+            category = data_type
+            val,classification = imapactCategorization(float(stdev_value),'Values')
+            dttsaSupportServices.addDTReportImpactCategories(dt_id,sub_dt_id,category,"std",val[0],val[1],val[2],classification)
+        
+
 @app.post("/report")
 def submitDTReports():
     content = request.get_json()
@@ -1037,6 +1185,7 @@ def submitDTReports():
         dt_type = str(content['dt_type'])
         dttsaSupportServices.addDTType(dt_id,dt_type)
         dttsaSupportServices.addDTReports(dt_id,report)
+        dtValueImpactCategorization(dt_id,report)
         msg = "sucesss"
         res = {"status": msg},200
     except Exception as e:

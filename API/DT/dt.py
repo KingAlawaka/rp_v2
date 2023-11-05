@@ -105,8 +105,8 @@ else:
     app.config['DTTSA_IP'] = os.environ['dttsa_IP']
 
 if os.environ.get('num_iterations') is None:
-    num_iterations = 15
-    app.config['num_iterations'] = 15
+    num_iterations = 10
+    app.config['num_iterations'] = 10
 else:
     num_iterations = int(os.environ['num_iterations'])
     app.config['num_iterations'] = int(os.environ['num_iterations'])
@@ -362,7 +362,7 @@ def recordInternalSub():
             sub_success = False
             while sub_success == False:
                 selectedIndex = random.choice(apiList)
-                dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation)
+                
                 #TODO local env use IPs and using a regex IP extracted. cloud env need full
                 # temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
                 sub_dt_url = URL_pattern_regex.search(selectedIndex['URL'])[0]
@@ -375,6 +375,7 @@ def recordInternalSub():
                 # res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
                 res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
                 if res.status_code == 200:
+                    dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation)
                     sub_success = True
     
         res = {"msg": "Sucess"}
@@ -720,8 +721,31 @@ def testService():
 
 @app.get("/repattack")
 def reputationAttackEnabler():
+    attack_DT = request.args.get('attdt')   #DT id to attack on a selfpromote same DT ID
+    strength = request.args.get('strength') #up one impact level or maximum 1=mid 2=high
+    attack = request.args.get('attack') #bm = bad mouthing sp= self promoting
+    type_of_attack = request.args.get('type')   #i=individual g=group
+    initiator_dt_id = request.args.get('init_dt')
     dtLogic.enableReputationAttacks(True)
-    return "Ok"
+    dtLogic.setReputationAttackStrength(int(strength))
+    dbHelper.addAttackConfiguration(attack_DT,strength,attack,type_of_attack)
+    rep_attack_log_url = dttsaURL() +"/repattacklog?dt="+str(app.config['DT_ID'])+"&attdt="+str(attack_DT)+"&strength="+str(strength)+"&attack="+str(attack)+"&type="+str(type_of_attack)+"&init_dt="+str(initiator_dt_id)
+    res = requests.get(rep_attack_log_url)
+    if type_of_attack == "g":
+        get_external_connected_DTs = dbHelper.getSubscriptionInfo("e")
+        get_internal_connected_DTs = dbHelper.getSubscriptionInfo("i")
+        group_ips = []
+        for e in get_external_connected_DTs:
+            group_ips.append(e[5].split('/')[2])
+        for i in get_internal_connected_DTs:
+            group_ips.append(i[5].split('/')[2])
+        group_ips = list(dict.fromkeys(group_ips))
+        print(group_ips)
+        for ip in group_ips:
+            getServiceURL = "http://"+ip+"/repattack?attdt="+str(attack_DT)+"&strength="+str(strength)+"&attack="+str(attack)+"&type=i&init_dt="+str(app.config['DT_ID'])
+            res = requests.get(getServiceURL)
+    res = {"msg": "Attack started"}
+    return make_response(res,200)
 
 '''
 #send DTTSA, DT subscriptions from other DTs [Internal Subs]

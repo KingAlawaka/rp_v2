@@ -268,6 +268,9 @@ create table reputation_attack_log_tbl(
 	dt_id int,
 	attacked_dt_id int,
 	attack text,
+	strength int,
+	attack_type text,
+	initiator_dt_id int,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
@@ -293,6 +296,30 @@ create table dttsa_qos_staging_tbl(
 	high_count int,
 	category text,
 	test_type text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table dttsa_dt_values_impact_categories_tbl(
+	id serial,
+	dt_id int,
+	sub_dt_id int,
+	category text,
+	unit text, -- std= Standard deviation or avg
+	low_count int,
+	mid_count int,
+	high_count int,
+	dt_impact_prediction text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table reputation_attack_possibilities(
+	id serial,
+	dt_id int,
+	attacked_dt int,
+	analysis text,
+	role text,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );

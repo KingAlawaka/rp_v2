@@ -159,3 +159,108 @@ select * from dttsa_trust_calculations_tbl where dt_id=15 and status=-5;
 select * from api_qos_records_tbl where status=-5 and dt_id=2;
 
 select * from backup_qos_records_tbl;
+
+--- recent use
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-10 order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+
+select distinct status from dt_type_tbl;
+
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -2 and function_name = 'QoS_pm' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -4 and function_name = 'QoS_n' order by timestamp asc;
+
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by timestamp asc;
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
+
+select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+
+select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
+
+select * from dttsa_trust_calculations_tbl where dt_id=15 and status=-5;
+select * from api_qos_records_tbl where status=-5 and dt_id=2;
+
+select * from backup_qos_records_tbl;
+
+
+
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-10 order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and status=-1 order by dt_id asc;
+
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_id=1 order by status desc;
+
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null order by status asc;
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_id=8 order by status asc; 
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -2 and function_name = 'QoS_pm' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -4 and function_name = 'QoS_n' order by timestamp asc;
+
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by timestamp asc;
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
+
+select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+
+select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
+
+select * from dttsa_trust_calculations_tbl where dt_id=1 order by status desc; and status=-1;
+select * from api_qos_records_tbl where status=-3 and dt_id=1;
+
+select * from backup_qos_records_tbl;
+
+select * from dt_tbl;
+
+select * from dt_sub_tbl;
+
+select * from dt_data_submission_tbl where dt_id=2 and sub_dt_id=1;
+select * from dt_data_submission_tbl where sub_dt_id=2 and dt_id !=2;
+select distinct dt_id from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS';
+select min(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select max(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select avg(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select avg  from dt_data_submission_tbl where sub_dt_id=1 and dt_id=2 and data_type='QoS'; and status=-1;
+
+select min(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+select max(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+select avg(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+
+select * from dt_data_submission_tbl where data_type='QoS' and sub_dt_id=2 and status=1;
+
+select * from dttsa_dt_values_impact_categories_tbl where status = 1  and dt_id=3 and sub_dt_id=2 order by sub_dt_id;
+
+select * from reputation_attack_log_tbl;
+select * from dttsa_trust_calculations_tbl where status =-1 order by dt_id;
+
+select * from reputation_attack_possibilities;
+select * from dt_tbl;
+select * from dt_sub_tbl where sub_dt_id=2;
+select distinct dt_id from dt_sub_tbl where sub_dt_id = 1 and type !='POST' union select distinct sub_dt_id from dt_sub_tbl where dt_id = 1 and type='POST';
+select dt_id,sub_dt_id,dt_impact_prediction,count(dt_impact_prediction) as hit_count from dttsa_dt_values_impact_categories_tbl where status = -2 and category='QoS' and sub_dt_id=1 group by dt_id,sub_dt_id,dt_impact_prediction order by hit_count desc;
+select * from dttsa_trust_calculations_tbl where status =-2 and dt_id=1 and category='DTTSA QoS'; 
+
+select dt_id,attacked_dt,count(attacked_dt) from reputation_attack_possibilities group by dt_id,attacked_dt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

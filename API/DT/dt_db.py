@@ -259,6 +259,14 @@ class DBHelper:
         allRows = self.readDB('select DISTINCT DT_ID from qos_tbl where status=1;')
         return allRows
     
+    def getReputationAttackDTs(self):
+        allRows = self.readDB('select DISTINCT attack_DT_ID from reputation_attack_config_tbl where status=1;')
+        return allRows
+    
+    def getReputationAttackConfiguration(self,attack_DT_ID):
+        allRows = self.readDB('select * from reputation_attack_config_tbl where attack_DT_ID = '+ str(attack_DT_ID)+' and status=1 order by created desc;')
+        return allRows
+    
     def getFinalValueTbl(self):
         allRows = self.readDB('select  DT_ID,data_type,stdev_value,min,max,avg from final_value_tbl where status=1;')
         return allRows
@@ -390,6 +398,16 @@ class DBHelper:
             #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values (%s,%s,%s,%s,1);',(req_type,DT_ID,API_ID,value)
             #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values ('+ req_type +','+ str(DT_ID)+','+str(API_ID)+','+str(value)+',0);'
             print("except: updateDataTable ", str(e))
+    
+    def addAttackConfiguration(self,attack_dt_id,strength,attack,attack_type):
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            cur.execute("insert into reputation_attack_config_tbl (attack_DT_ID,strength,attack,type,status) values ('"+ attack_dt_id +"','"+strength+"','"+attack+"','"+attack_type+"',1)")
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            print("except: addAttackConfiguration ", str(e))
 
     
 

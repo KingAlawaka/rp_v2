@@ -13,6 +13,7 @@ drop table if EXISTS stdev_qos_tbl;
 drop table if EXISTS final_value_tbl;
 drop table if EXISTS dt_details_tbl;
 drop table if EXISTS trend_analysis_tbl;
+drop table if EXISTS reputation_attack_config_tbl;
 
 --record all the internal transaction happening in the DT
 create table trans_tbl(
@@ -194,4 +195,14 @@ create table formula_config_tbl(
     status INTEGER
 );
 
+--reputation attack config table
+create table reputation_attack_config_tbl(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attack_DT_ID integer,
+    attack text,
+    strength integer,
+    type text,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status INTEGER
+);
 

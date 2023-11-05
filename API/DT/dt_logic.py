@@ -21,10 +21,14 @@ class DTLogic:
         self.valueRanges = self.simHelper.generateRandomValueRanges()
         random.seed(rand_seed)
         self.reputation_attack = False
+        self.reputation_attack_strength = 1
         pass
 
     def enableReputationAttacks(self,flag):
         self.reputation_attack = flag
+
+    def setReputationAttackStrength(self,strength):
+        self.reputation_attack_strength=strength
     
     def setDTID(self,dt_id):
         self.dt_id=dt_id
@@ -211,6 +215,11 @@ class DTLogic:
         try:
             qos_connectedDTs = self.dbHelper.getConnectedQoSDTs()
             connectedDTs = self.dbHelper.getConnectedDTs()
+            getRepAttackDTs = self.dbHelper.getReputationAttackDTs()
+            rep_attack_DT_IDs = []
+            for a in getRepAttackDTs:
+                rep_attack_DT_IDs.append(a[0])
+            print(rep_attack_DT_IDs)
             resQoS = []
             for c in qos_connectedDTs:
                 qos_values = self.dbHelper.getQoSFromDT(c[0])
@@ -219,9 +228,40 @@ class DTLogic:
                     val.append(v[0])
                 stdValue = round(statistics.stdev(val),4)
                 avgQoS = round(statistics.mean(val),3)
-                if(self.reputation_attack):
-                    stdValue = stdValue + 1
-                    avgQoS = avgQoS + 1
+                print(avgQoS)
+                # print(getRepAttackDTs)
+                # print(c[0])
+                # print(c[0] in rep_attack_DT_IDs)
+                if(self.reputation_attack and (c[0] in rep_attack_DT_IDs)):
+                    rep_attack_config = self.dbHelper.getReputationAttackConfiguration(c[0])
+                    print("inside rep attack")
+                    print(rep_attack_config[0][3])
+                    if (rep_attack_config[0][3] == 1):
+                        diff = float(self.config['repattack']['qos_mid']) - avgQoS
+                        if diff < 0:
+                            # avgQoS = avgQoS - (diff * -1) - float(self.config['repattack']['qos_increment_factor'])
+                            if rep_attack_config[0][2] == "sp":
+                                avgQoS = float(self.config['repattack']['qos_mid']) + diff
+                            else:
+                                avgQoS = (diff * -1) + float(self.config['repattack']['qos_mid'])
+                        else:
+                            if rep_attack_config[0][2] == "sp":
+                                avgQoS = float(self.config['repattack']['qos_mid']) - diff
+                            else:
+                                avgQoS = diff + float(self.config['repattack']['qos_mid'])
+                    else:
+                        diff = float(self.config['repattack']['qos_high']) - avgQoS
+                        if diff < 0:
+                            if rep_attack_config[0][2] == "sp":
+                                avgQoS = diff  + float(self.config['repattack']['qos_high'])
+                            else:
+                                avgQoS = (diff * -1) + float(self.config['repattack']['qos_high'])
+                        else:
+                            if rep_attack_config[0][2] == "sp":
+                                avgQoS =  float(self.config['repattack']['qos_high']) - diff 
+                            else:
+                                avgQoS = diff + float(self.config['repattack']['qos_high'])
+                print(avgQoS)
                 self.dbHelper.addFinalValueTbl(str(c[0]),'QoS',stdValue,str(min(val)),str(max(val)),str(avgQoS))
                 # resQoS.append("DT_ID "+str(c[0])+" QoS STD: "+str(stdValue))
                 # resQoS.append("DT_ID "+str(c[0])+" QoS min: "+str(min(val)))
@@ -234,8 +274,39 @@ class DTLogic:
                 for v in dt_values:
                     val.append(v[0])
                 stdValue = round(statistics.stdev(val),4)
-                if(self.reputation_attack):
-                    stdValue = stdValue + 1.5
+                print(stdValue)
+                # print(getRepAttackDTs)
+                # print(c[0])
+                # print(c[0] in getRepAttackDTs)
+                if(self.reputation_attack and (c[0] in rep_attack_DT_IDs)):
+                    rep_attack_config = self.dbHelper.getReputationAttackConfiguration(c[0])
+                    print("inside rep attack")
+                    print(rep_attack_config[0][3])
+                    if (rep_attack_config[0][3] == 1):
+                        diff = float(self.config['repattack']['value_mid']) - stdValue
+                        if diff < 0:
+                            if rep_attack_config[0][2] == "sp":
+                                stdValue =  diff + float(self.config['repattack']['value_mid'])
+                            else:
+                                stdValue =  (diff * -1) + float(self.config['repattack']['value_mid'])
+                        else:
+                            if rep_attack_config[0][2] == "sp":
+                                stdValue = float(self.config['repattack']['value_mid']) -  diff
+                            else:
+                                stdValue = float(self.config['repattack']['value_mid']) +  diff
+                    else:
+                        diff = float(self.config['repattack']['value_high']) - stdValue
+                        if diff < 0:
+                            if rep_attack_config[0][2] == "sp":
+                                stdValue =  diff  + float(self.config['repattack']['value_high'])
+                            else:
+                                stdValue =  (diff * -1) + float(self.config['repattack']['value_high'])
+                        else:
+                            if rep_attack_config[0][2] == "sp":
+                                stdValue =  float(self.config['repattack']['value_high']) - diff
+                            else:
+                                stdValue = diff + float(self.config['repattack']['value_high'])
+                print(stdValue) 
                 self.dbHelper.addFinalValueTbl(str(c[0]),'Values',stdValue,str(min(val)),str(max(val)),str(round(statistics.mean(val),3)))
                 # resDTValues.append("DT_ID "+str(c[0])+" Val STD: "+str(stdValue))
                 # resDTValues.append("DT_ID "+str(c[0])+" Val min: "+str(min(val)))

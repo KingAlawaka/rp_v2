@@ -251,6 +251,17 @@ class DTTSASupportServices:
         orgList = cur.fetchall()
         cur.close()
         return orgList
+    
+    def addDTReportImpactCategories(self,dt_id,sub_dt_id,category,unit,low_count,mid_count,high_count,dt_impact_prediction):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            cur.execute('insert into dttsa_dt_values_impact_categories_tbl (dt_id,sub_dt_id,category,unit,low_count,mid_count,high_count,dt_impact_prediction,status) values (%s,%s,%s,%s,%s,%s,%s,%s,1);',(dt_id,sub_dt_id,category,unit,low_count,mid_count,high_count,dt_impact_prediction))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: addDTReportImpactCategories ", str(e))
         
 
     def addDTReports(self,dt_id,report):
@@ -472,6 +483,8 @@ class DTTSASupportServices:
             cur.execute('update dt_trust_report_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update reputation_categorization_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update dttsa_qos_staging_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update dttsa_dt_values_impact_categories_tbl set status=%s where status=1;',(iteration_count,))
+            cur.execute('update reputation_attack_possibilities set status=%s where status=1;',(iteration_count,))
             conn.commit()
             cur.close()
             conn.close()
@@ -553,9 +566,48 @@ class DTTSASupportServices:
         return records
     
     
-        
+    def addDTReputationAttackLog(self,dt_id,attacked_dt_id,attack,strength,attack_type,initiator_dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into reputation_attack_log_tbl (dt_id,attacked_dt_id,attack,strength,attack_type,initiator_dt_id,status) values (%s,%s,%s,%s,%s,%s,1);',(dt_id,attacked_dt_id,attack,strength,attack_type,initiator_dt_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    def addVulnerableRepAttackPossibleDTs(self,dt_id,attacked_dt_id,analysis):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into reputation_attack_possibilities (dt_id,attacked_dt,analysis,status) values (%s,%s,%s,1)',(dt_id,attacked_dt_id,analysis))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    def getDTValuesImpactPredictionsByCategory(self,sub_dt_id,iteration_count,category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select dt_id,sub_dt_id,dt_impact_prediction,count(dt_impact_prediction) as hit_count from dttsa_dt_values_impact_categories_tbl where status = %s and category=%s and sub_dt_id=%s group by dt_id,sub_dt_id,dt_impact_prediction order by hit_count desc;',(iteration_count,category,sub_dt_id))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getDTTrustCalculationsByCategory(self,dt_id,category,iteration_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from dttsa_trust_calculations_tbl where status =%s and dt_id=%s and category=%s;',(iteration_count,dt_id,category))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getDTSubByCategory(self,dt_id,category):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct dt_id from dt_sub_tbl where sub_dt_id = %s and type !=%s union select distinct sub_dt_id from dt_sub_tbl where dt_id = %s and type=%s;',(dt_id,category,dt_id,category))
+        records = cur.fetchall()
+        cur.close()
+        return records
 
     
+# 
 
     # def addAPISecurityCheck(self,DT_ID,API_ID,scan_id):
     #     try:

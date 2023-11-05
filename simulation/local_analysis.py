@@ -25,7 +25,7 @@ sched = BackgroundScheduler()
 sched.start()
 
 
-number_of_simulations = 10
+number_of_simulations = 5
 
 main_server = "127.0.0.1"
 
@@ -105,7 +105,7 @@ def cloudSimStart():
 
 def startScheduleJob():
     print("Starts the Scheduled jobs")
-    sched.add_job(cloudSimStart,'interval', seconds=120, id='my_job_id',replace_existing=True)
+    sched.add_job(cloudSimStart,'interval', seconds=60, id='my_job_id',replace_existing=True)
     
 
 def stopScheduleJob():
