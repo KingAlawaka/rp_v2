@@ -14,6 +14,7 @@ drop table if EXISTS final_value_tbl;
 drop table if EXISTS dt_details_tbl;
 drop table if EXISTS trend_analysis_tbl;
 drop table if EXISTS reputation_attack_config_tbl;
+drop table if EXISTS debug_tbl;
 
 --record all the internal transaction happening in the DT
 create table trans_tbl(
@@ -206,3 +207,9 @@ create table reputation_attack_config_tbl(
     status INTEGER
 );
 
+create table debug_tbl(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    msg TEXT NOT NULL,
+    status INTEGER
+);

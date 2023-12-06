@@ -99,10 +99,10 @@ class APIAnalyzer:
     
     def checkAPIVulnerbilities(self,DT_ID,API_ID,url,sample_json,type_req):
         #TODO remove url replacement. only for local testing with docker astra service (cloud)
-        ip_addr_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
-        specific_substitute = "host.docker.internal"
-        a = url
-        url = re.sub(ip_addr_regex, specific_substitute, url)
+        # ip_addr_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
+        # specific_substitute = "host.docker.internal"
+        # a = url
+        # url = re.sub(ip_addr_regex, specific_substitute, url)
             
         dictToSend = {"appname" : str(DT_ID)+"_"+str(API_ID),"url": url ,"headers": "","body": sample_json,"method": type_req,"auth_header": "","auth_url": ""}
         jsonObject = jsonify(dictToSend)

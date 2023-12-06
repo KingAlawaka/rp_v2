@@ -319,7 +319,20 @@ create table reputation_attack_possibilities(
 	dt_id int,
 	attacked_dt int,
 	analysis text,
+	using_category text,
+	logic text,
+	attack text,
+	attack_type text,
+	rep_attack_prediction text,
+	confirmation int,
 	role text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table debug_msg(
+	id serial,
+	msg text,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );

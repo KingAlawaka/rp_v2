@@ -62,6 +62,16 @@ class DBHelper:
             connection.close()
         except Exception as e:
             print("except: addTransaction ", str(e))
+
+    def addDebugMsg(self,msg):
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            cur.execute("insert into debug_tbl (msg,status) values ('"+ msg +"',1)")
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            print("except: addTransaction ", str(e))
     
     def insertDataTbl(self,req_type,DT_ID,API_ID,value):
         try:

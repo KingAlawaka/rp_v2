@@ -211,7 +211,7 @@ class DTLogic:
         except Exception as e:
             print("calculateStdevQoS ",str(e))
     
-    def generateFinalValues(self):
+    def generateFinalValues(self,dt_id):
         try:
             qos_connectedDTs = self.dbHelper.getConnectedQoSDTs()
             connectedDTs = self.dbHelper.getConnectedDTs()
@@ -235,6 +235,7 @@ class DTLogic:
                 if(self.reputation_attack and (c[0] in rep_attack_DT_IDs)):
                     rep_attack_config = self.dbHelper.getReputationAttackConfiguration(c[0])
                     print("inside rep attack")
+                    self.dbHelper.addDebugMsg("QoS Rep attack from "+str(dt_id)+" to "+str(c[0])+" strength "+str(rep_attack_config[0][3])+" attack "+str(rep_attack_config[0][2]))
                     print(rep_attack_config[0][3])
                     if (rep_attack_config[0][3] == 1):
                         diff = float(self.config['repattack']['qos_mid']) - avgQoS
@@ -281,6 +282,8 @@ class DTLogic:
                 if(self.reputation_attack and (c[0] in rep_attack_DT_IDs)):
                     rep_attack_config = self.dbHelper.getReputationAttackConfiguration(c[0])
                     print("inside rep attack")
+                    self.dbHelper.addDebugMsg("Values Rep attack from "+str(dt_id)+" to "+str(c[0])+" strength "+str(rep_attack_config[0][3])+" attack "+str(rep_attack_config[0][2]))
+
                     print(rep_attack_config[0][3])
                     if (rep_attack_config[0][3] == 1):
                         diff = float(self.config['repattack']['value_mid']) - stdValue

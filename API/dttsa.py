@@ -88,6 +88,55 @@ def repAttackAnalysis():
     else:
         print("Waiting for finish analysis")
 
+def impactMajorityDetector(impacts,type_index,add_val_index):
+    impact_counter = [0,0,0] #n c m
+    for i in impacts:
+        if i[type_index] == 'n':
+            if add_val_index != 1:
+                impact_counter[0] = impact_counter[0] + i[add_val_index]
+            else:
+                impact_counter[0] = impact_counter[0] + 1
+
+        if i[type_index] == 'c':
+            if add_val_index != 1:
+                impact_counter[1] = impact_counter[1] + i[add_val_index]
+            else:
+                impact_counter[1] = impact_counter[1] + 1
+
+        if i[type_index] == 'm':
+            if add_val_index != 1:
+                impact_counter[2] = impact_counter[2] + i[add_val_index]
+            else:
+                impact_counter[2] = impact_counter[2] + 1
+    
+    max_value = max(impact_counter)
+    multiple_majorities_counter = 0
+    for i in impact_counter:
+        if i == max_value:
+            multiple_majorities_counter += 1
+
+    multiple_majority = False
+    majority_impact = ""
+    if multiple_majorities_counter != 1:
+        multiple_majority = True
+        if impact_counter[0] == max_value and impact_counter[1] == max_value:
+            majority_impact = "c"
+        else:
+            majority_impact = "m"
+    else:
+        if impact_counter[0] == max_value:
+            majority_impact = "n"
+        elif impact_counter[1] == max_value:
+            majority_impact = "c"
+        else:
+            majority_impact = "m"
+
+
+
+    return multiple_majority,majority_impact
+
+     
+
 def repAttackCheck():
     # app.config.update(
     #     iteration_count = 1
@@ -96,70 +145,482 @@ def repAttackCheck():
     # print(dts)
     for dt in dts:
         subs = dttsaSupportServices.getDTSubByCategory(dt[0],'POST')
+        category_impacts = []
         print(dt[0])
-        impact_predictions = dttsaSupportServices.getDTValuesImpactPredictionsByCategory(dt[0],(int(app.config['iteration_count'])*-1),'QoS')
-        print(impact_predictions)
+        dttsaSupportServices.addDebugMsg(dt[0])
+        qos_impact_predictions = dttsaSupportServices.getDTValuesImpactPredictionsByCategory(dt[0],(int(app.config['iteration_count'])*-1),'QoS')
+        print(qos_impact_predictions)
+        values_impact_predictions = dttsaSupportServices.getDTValuesImpactPredictionsByCategory(dt[0],(int(app.config['iteration_count'])*-1),'Values')
+        dttsaSupportServices.addDebugMsg("QoS impact predictions: "+str(qos_impact_predictions))
+        dttsaSupportServices.addDebugMsg("Values impact predictions: "+str(values_impact_predictions))
+
+        qos_multiple_majority,qos_majority_type = impactMajorityDetector(qos_impact_predictions,2,3)
+        if len(qos_impact_predictions) > 0:
+            category_impacts.append([qos_majority_type])
+        values_multiple_majority,values_majority_type = impactMajorityDetector(values_impact_predictions,2,3)
+        if len(values_impact_predictions) > 0:
+            category_impacts.append([values_majority_type])
+        
+        dttsaSupportServices.addDebugMsg("QoS multi majority "+str(qos_multiple_majority)+" majority type "+str(qos_majority_type))
+        dttsaSupportServices.addDebugMsg("values multi majority "+str(values_multiple_majority)+" majority type "+str(values_majority_type))
+
         dttsa_qos_classification = dttsaSupportServices.getDTTrustCalculationsByCategory(dt[0],'DTTSA QoS',(int(app.config['iteration_count'])*-1))
         print(dttsa_qos_classification)
+        dttsaSupportServices.addDebugMsg("DTTSA QoS " + str(dttsa_qos_classification))
+        dttsa_qos_multiple_majority,dttsa_qos_majority_type = impactMajorityDetector(dttsa_qos_classification,7,1)
+        if len(dttsa_qos_classification) > 0:
+            category_impacts.append([dttsa_qos_majority_type])
+        dttsaSupportServices.addDebugMsg("DTTSA QoS multi majority "+str(dttsa_qos_multiple_majority)+" majority type "+str(dttsa_qos_majority_type))
+
+        dt_type_prediction_history = dttsaSupportServices.getDTtypePredictionHistory(dt[0])
+        dttsaSupportServices.addDebugMsg("DT history " + str(dt_type_prediction_history))
+        dt_type_history_prediction_multiple_majority, dt_type_history_prediction_type = impactMajorityDetector(dt_type_prediction_history,2,3)
+        if len(dt_type_prediction_history) > 0:
+            category_impacts.append([dt_type_history_prediction_type])
+        dttsaSupportServices.addDebugMsg("DT type prediction history multi majority "+str(dt_type_history_prediction_multiple_majority)+" majority type "+str(dt_type_history_prediction_type))
+
+
+        dttsaSupportServices.addDebugMsg("Overall " + str(category_impacts))
+        overall_category_multiple_majority,overall_category_type = impactMajorityDetector(category_impacts,0,1)
+        # if qos_majority_type == values_majority_type == dttsa_qos_majority_type == dt_type_history_prediction_type:
+        # if overall_category_multiple_majority == False:
+        dttsaSupportServices.addDebugMsg("Overall multi majority"+ str(overall_category_multiple_majority) +" overall majority " +str(overall_category_type))
+
         majority_impact_prediction = ""
         considerd_DTs = []
-        if len(impact_predictions)>=2:
-            majority_impact_prediction = impact_predictions[0][2]
-            for ip in impact_predictions:
+        dt_qos_attack = False
+        dt_value_attack = False
+        dttsa_qos_attack = False
+
+        dt_report_dt_id = 0
+        dt_attacked_dt_id = 0
+        dttsa_report_dt_id = 0
+        dttsa_attacked_dt_id = 0
+
+        dt_attack_name = ""
+        dttsa_attack_name = ""
+        #Logic 1 all participating categories have same type
+        if overall_category_multiple_majority == False and category_impacts.count([overall_category_type]) == len(category_impacts):
+            dttsaSupportServices.addDebugMsg("Overall agree")
+            majority_impact_prediction = overall_category_type
+            
+            #QoS
+            for ip in qos_impact_predictions:
+                dttsaSupportServices.addDebugMsg(" logic 1 qos ip[2] values "+ str(ip[2]))
+                dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
                 if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
-                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT)")
-                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],"DT")
+                    attack_name = ""
+                    if majority_impact_prediction == "n":
+                        if ip[2] == "c" or ip[2] == "m":
+                            attack_name = "Bad Mouthing"
+                            dt_qos_attack = True
+                            dt_report_dt_id = ip[0]
+                            dt_attacked_dt_id = ip[1]
+                    elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                        if ip[2] == "c" or ip[2] == "n":
+                            attack_name = "Self Promote"
+                            dt_qos_attack = True
+                            dt_report_dt_id = ip[0]
+                            dt_attacked_dt_id = ip[1]
+                    else:
+                        attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                    dt_attack_name = attack_name
+                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly in QoS (DT) "+attack_name)
+                    detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly (DT)"+attack_name +" all agree "
+                    submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                    if submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                        dttsaSupportServices.addDebugMsg(detection_msg)
+                        dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 1",attack_name,"group","RA",100,"member")
+                    considerd_DTs.append(ip[0])
                 else:
                     considerd_DTs.append(ip[0])
 
-                if dttsa_qos_classification[0][7] != ip[2] and ip[0] not in considerd_DTs:
-                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DTTSA vs DT)")
-                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],"DTTSA")
+            #Values
+            for ip in values_impact_predictions:
+                dttsaSupportServices.addDebugMsg(" logic 1 values ip[2] values "+ str(ip[2]))
+                dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                    attack_name = ""
+                    if majority_impact_prediction == "n":
+                        if ip[2] == "c" or ip[2] == "m":
+                            attack_name = "Bad Mouthing"
+                            dt_value_attack = True
+                            dt_report_dt_id = ip[0]
+                            dt_attacked_dt_id = ip[1]
+                    elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                        if ip[2] == "c" or ip[2] == "n":
+                            attack_name = "Self Promote"
+                            dt_value_attack = True
+                            dt_report_dt_id = ip[0]
+                            dt_attacked_dt_id = ip[1]
+                    else:
+                        attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                    dt_attack_name = attack_name
+                    print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT) "+attack_name)
+                    detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly in Values (DT)"+attack_name +" all agree "
+                    submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                    if submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                        dttsaSupportServices.addDebugMsg(detection_msg)
+                        dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 1",attack_name,"group","RA",100,"member")
+                    considerd_DTs.append(ip[0])
                 else:
                     considerd_DTs.append(ip[0])
-            # prediction_list = []
-            # submitted_dt_ids = []
-            # hit_counts = []
-            # for i,ip in enumerate(impact_predictions):
-            #     prediction_list.append(ip[2])
-            #     submitted_dt_ids.append(ip[0])
-            #     hit_counts.append(ip[3])
-            # prediction_mismatch = DTSubmittedValueMismatchDetector(prediction_list)
-            # dt_id_mismatch = DTSubmittedValueMismatchDetector(submitted_dt_ids)
-            # hit_count_mismatch = DTSubmittedValueMismatchDetector(hit_counts)
-            # print(submitted_dt_ids)
-            # print(dt_id_mismatch)
-            # if prediction_mismatch and dt_id_mismatch:
-            #     print("different prediction from different DTs")
-            #     max_hit_count = max(hit_counts)
-            #     for i in range(len(prediction_list)):
-            #         if hit_counts[i] == max_hit_count:
-            # elif prediction_mismatch and dt_id_mismatch == False:
-            #     print("different predictions same DT")
-            # elif prediction_mismatch == False and dt_id_mismatch:
-            #     print("same prediction different DTs")
-            # v1 = impact_predictions[0][3]
-            # v2 = impact_predictions[1][3]
-            # if v1 == v2:
-            #     print("first two impact scores are equal")
-            #     if impact_predictions[0][0] == impact_predictions[1][0]:
-            #         print("first two equal impact socres from same DT")
-            #         majority_impact_prediction = impact_predictions[0][2]
-            #     else:
-            #         print("first two equal impact scores are not from same DT")
-            #         print("checking both predictions are same or not")
-            #         if impact_predictions[0][2] == impact_predictions[1][2]:
-            #             print("not equal DTs but same prediction")
+            
+        else:
+            dttsaSupportServices.addDebugMsg("Overall disagree")
+            # if overall_category_multiple_majority == False: dttsa_qos_multiple_majority,dttsa_qos_majority_type
+            if dttsa_qos_multiple_majority == False and dt_type_history_prediction_multiple_majority == False:
+                if dttsa_qos_majority_type == dt_type_history_prediction_type:
+                    majority_impact_prediction = dttsa_qos_majority_type
+            
+                    #QoS
+                    for ip in qos_impact_predictions:
+                        dttsaSupportServices.addDebugMsg(" logic 2 qos ip[2] values "+ str(ip[2]))
+                        dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                        if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                            attack_name = ""
+                            if majority_impact_prediction == "n":
+                                if ip[2] == "c" or ip[2] == "m":
+                                    attack_name = "Bad Mouthing"
+                                    dt_qos_attack = True
+                                    dt_report_dt_id = ip[0]
+                                    dt_attacked_dt_id = ip[1]
+                            elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                if ip[2] == "c" or ip[2] == "n":
+                                    attack_name = "Self Promote"
+                                    dt_qos_attack = True
+                                    dt_report_dt_id = ip[0]
+                                    dt_attacked_dt_id = ip[1]
+                            else:
+                                attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                            dt_attack_name = attack_name
+                            print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly in QoS (DT) "+attack_name)
+                            detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly (DT)"+attack_name +" Overall disagree DTTSA and History"
+                            submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                            if dt_type_history_prediction_type == "n":
+                                dttsaSupportServices.addDebugMsg(detection_msg)
+                                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 2",attack_name,"group","RA",100,"member")
+                            elif submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                dttsaSupportServices.addDebugMsg(detection_msg)
+                                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 2",attack_name,"group","RA",100,"member")
+                            considerd_DTs.append(ip[0])
+                        else:
+                            considerd_DTs.append(ip[0])
 
-            # print(v1)
-        elif len(impact_predictions) == 1:
-            if dttsa_qos_classification[0][7] != impact_predictions[0][2]:
-                print("DT ", impact_predictions[0][0]," reporting DT ", impact_predictions[0][1], " incorrectly (DTTSA vs DT)")
-                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(impact_predictions[0][0],impact_predictions[0][1],"DTTSA")
+                    #Values
+                    for ip in values_impact_predictions:
+                        dttsaSupportServices.addDebugMsg(" logic 2 ip[2] values "+ str(ip[2]))
+                        dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                        if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                            attack_name = ""
+                            if majority_impact_prediction == "n":
+                                if ip[2] == "c" or ip[2] == "m":
+                                    attack_name = "Bad Mouthing"
+                                    dt_qos_attack = True
+                                    dt_report_dt_id = ip[0]
+                                    dt_attacked_dt_id = ip[1]
+                            elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                if ip[2] == "c" or ip[2] == "n":
+                                    attack_name = "Self Promote"
+                                    dt_qos_attack = True
+                                    dt_report_dt_id = ip[0]
+                                    dt_attacked_dt_id = ip[1]
+                            else:
+                                attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                            dt_attack_name = attack_name
+                            print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT) "+attack_name)
+                            detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly in Values (DT)"+attack_name +" Overall disagree DTTSA and History"
+                            submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                            if dt_type_history_prediction_type == "n":
+                                dttsaSupportServices.addDebugMsg(detection_msg)
+                                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 2",attack_name,"group","RA",100,"member")
+                            elif submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                dttsaSupportServices.addDebugMsg(detection_msg)
+                                dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 2",attack_name,"group","RA",100,"member")
+                            considerd_DTs.append(ip[0])
+                        else:
+                            considerd_DTs.append(ip[0])
+                else:
+                    #if statement logic
+                    #dttsa_qos_multiple_majority == False and len(dt_type_prediction_history) > 3 and dt_type_history_prediction_multiple_majority == False
+                    if dttsa_qos_multiple_majority == False:
+                        majority_impact_prediction = dttsa_qos_majority_type
+                
+                        #QoS
+                        for ip in qos_impact_predictions:
+                            dttsaSupportServices.addDebugMsg(" logic 3 qos ip[2] values "+ str(ip[2]))
+                            dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                            if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                                attack_name = ""
+                                if majority_impact_prediction == "n":
+                                    if ip[2] == "c" or ip[2] == "m":
+                                        attack_name = "Bad Mouthing"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                    if ip[2] == "c" or ip[2] == "n":
+                                        attack_name = "Self Promote"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                else:
+                                    attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                                dt_attack_name = attack_name
+                                print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly in QoS (DT) "+attack_name)
+                                detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly (DT)"+attack_name +" Overall disagree using only DTTSA to determine"
+                                submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                                if dt_type_history_prediction_type == "n":
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 3",attack_name,"group","PA",100,"member")
+                                elif submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 3",attack_name,"group","PA",100,"member") 
+                                considerd_DTs.append(ip[0])
+                            else:
+                                considerd_DTs.append(ip[0])
+
+                        #Values
+                        for ip in values_impact_predictions:
+                            dttsaSupportServices.addDebugMsg(" logic 3 values ip[2] values "+ str(ip[2]))
+                            dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                            if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                                attack_name = ""
+                                if majority_impact_prediction == "n":
+                                    if ip[2] == "c" or ip[2] == "m":
+                                        attack_name = "Bad Mouthing"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                    if ip[2] == "c" or ip[2] == "n":
+                                        attack_name = "Self Promote"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                else:
+                                    attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                                dt_attack_name = attack_name
+                                print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT) "+attack_name)
+                                detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly in Values (DT)"+attack_name +" Overall disagree using only DTTSA to determine"
+                                submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+
+                                if dt_type_history_prediction_type == "n":
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 3",attack_name,"group","PA",100,"member")
+                                elif submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 3",attack_name,"group","PA",100,"member")
+                                considerd_DTs.append(ip[0])
+                            else:
+                                considerd_DTs.append(ip[0])
+                    elif dt_type_history_prediction_multiple_majority == False:
+                        #considering DT type prediction history
+                        majority_impact_prediction = dt_type_history_prediction_type
+                
+                        #QoS
+                        for ip in qos_impact_predictions:
+                            dttsaSupportServices.addDebugMsg(" logic 4 qos ip[2] values "+ str(ip[2]))
+                            dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                            if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                                attack_name = ""
+                                if majority_impact_prediction == "n":
+                                    if ip[2] == "c" or ip[2] == "m":
+                                        attack_name = "Bad Mouthing"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                    if ip[2] == "c" or ip[2] == "n":
+                                        attack_name = "Self Promote"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                else:
+                                    attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                                dt_attack_name = attack_name
+                                print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly in QoS (DT) "+attack_name)
+                                detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly (DT)"+attack_name +" Overall disagree Histroy"
+                                submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                                if submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"QoS","logic 4",attack_name,"group","PA",100,"member")
+                                considerd_DTs.append(ip[0])
+                            else:
+                                considerd_DTs.append(ip[0])
+
+                        #Values
+                        for ip in values_impact_predictions:
+                            dttsaSupportServices.addDebugMsg(" logic 4 values ip[2] values "+ str(ip[2]))
+                            dttsaSupportServices.addDebugMsg(" considered DTs  "+ str(considerd_DTs))
+                            if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+                                attack_name = ""
+                                if majority_impact_prediction == "n":
+                                    if ip[2] == "c" or ip[2] == "m":
+                                        attack_name = "Bad Mouthing"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+                                    if ip[2] == "c" or ip[2] == "n":
+                                        attack_name = "Self Promote"
+                                        dt_qos_attack = True
+                                        dt_report_dt_id = ip[0]
+                                        dt_attacked_dt_id = ip[1]
+                                else:
+                                    attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+                                dt_attack_name = attack_name
+                                print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT) "+attack_name)
+                                detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly in Values (DT)"+attack_name +" Overall disagree History "
+                                submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(dt[0]),2,3)
+                                if submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (dt_type_history_prediction_type != "c" or dt_type_history_prediction_type != "m") :
+                                    dttsaSupportServices.addDebugMsg(detection_msg)
+                                    dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg,"Values","logic 4",attack_name,"group","PA",100,"member")
+                                considerd_DTs.append(ip[0])
+                            else:
+                                considerd_DTs.append(ip[0])
+
+    possible_attacks = dttsaSupportServices.getPossibleAttacks(3)
+    for pa in possible_attacks:
+        attack_counter = dttsaSupportServices.getPossibleAttackContinuityCount(pa[0],pa[1])
+        if len(attack_counter)>=3:
+            dttsaSupportServices.addDebugMsg("PA to RA true for DT "+str(pa[0]) +" and attacked DT "+str(pa[1]))
+            values = []
+            all_neg = True
+            for ac in attack_counter:
+                if ac[0] > 0:
+                    all_neg = False
+                values.append(ac[0])
+            if all_neg == True:
+                res = [-1 * values[i] for i in range(len(values))]
+                v1 = res[0] - res [1]
+                v2 = res[1] - res [2]
+                if (v1-v2) == 0:
+                    dttsaSupportServices.addDebugMsg("Continous attack ")
+                    submitted_dt_type_history_multi_values,submitted_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(pa[0]),2,3)
+                    attacked_dt_type_history_multi_values,attacked_dt_type_history = impactMajorityDetector(dttsaSupportServices.getDTtypePredictionHistory(pa[1]),2,3)
+                    if submitted_dt_type_history_multi_values== False and (submitted_dt_type_history != "c" or submitted_dt_type_history !="m") and (attacked_dt_type_history != "c" or attacked_dt_type_history != "m") :
+                        detection_msg = "DT " + str(pa[0]) + " reporting DT " + str(pa[1])+" incorrectly. changing PA to RA"
+                        dttsaSupportServices.addDebugMsg("Attack recorded")
+                        dttsaSupportServices.addDebugMsg(detection_msg)
+                        dttsaSupportServices.addVulnerableRepAttackPossibleDTs(pa[0],pa[1], detection_msg,"PA to RA","logic 5","Continuous","group","RA",100,"member")
+
+
+
+        # if len(qos_impact_predictions)>=2:
+        #     dttsaSupportServices.addDebugMsg("inside len impact >= 2 ")
+        #     majority_impact_prediction = qos_impact_predictions[0][2]
+        #     dttsa_prediction = dttsa_qos_classification[0][7]
+        #     majority_agree_with_dttsa = True
+        #     if majority_impact_prediction != dttsa_prediction:
+        #         majority_agree_with_dttsa = False
+
+        #     dttsaSupportServices.addDebugMsg("majority prediction: "+str(majority_impact_prediction))
+        #     for ip in qos_impact_predictions:
+        #         dttsaSupportServices.addDebugMsg(" ip[2] values "+ str(ip[2]))
+        #         if ip[2] != majority_impact_prediction and ip[0] not in considerd_DTs:
+        #             attack_name = ""
+        #             if majority_impact_prediction == "n":
+        #                 if ip[2] == "c" or ip[2] == "m":
+        #                     attack_name = "Bad Mouthing"
+        #                     dt_qos_attack = True
+        #                     dt_report_dt_id = ip[0]
+        #                     dt_attacked_dt_id = ip[1]
+        #             elif majority_impact_prediction == "c" or  majority_impact_prediction == "m":
+        #                 if ip[2] == "c" or ip[2] == "n":
+        #                     attack_name = "Self Promote"
+        #                     dt_qos_attack = True
+        #                     dt_report_dt_id = ip[0]
+        #                     dt_attacked_dt_id = ip[1]
+        #             else:
+        #                 attack_name = "majority "+ majority_impact_prediction + " reported "+ip[2]
+        #             dt_attack_name = attack_name
+        #             print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DT) "+attack_name)
+        #             detection_msg = "DT " + str(ip[0]) + " reporting DT " + str(ip[1])+" incorrectly (DT)"+attack_name +" majority agree with DTTSA "+str(majority_agree_with_dttsa)
+        #             dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1], detection_msg)
+        #         else:
+        #             considerd_DTs.append(ip[0])
+
+        #         if dttsa_qos_classification[0][7] != ip[2] and ip[0] not in considerd_DTs:
+        #             attack_name = ""
+        #             if dttsa_qos_classification[0][7] == "n":
+        #                 if ip[2] == "c" or ip[2] == "m":
+        #                     attack_name = "Bad Mouthing"
+        #                     dttsa_qos_attack = True
+        #                     dttsa_report_dt_id = ip[0]
+        #                     dttsa_attacked_dt_id = ip[1]
+        #             elif dttsa_qos_classification[0][7] == "c" or  dttsa_qos_classification[0][7] == "m":
+        #                 if ip[2] == "c" or ip[2] == "n":
+        #                     attack_name = "Self Promote"
+        #                     dttsa_qos_attack = True
+        #                     dttsa_report_dt_id = ip[0]
+        #                     dttsa_attacked_dt_id = ip[1]
+        #             else:
+        #                 attack_name = "DTTSA report "+ dttsa_qos_classification[0][7] + " reported "+ip[2]
+        #             dttsa_attack_name = attack_name
+        #             print("DT ", ip[0]," reporting DT ", ip[1], " incorrectly (DTTSA vs DT)")
+        #             detection_msg = "DT " + str(ip[0])+ " reporting DT " + str(ip[1]) + " incorrectly (DTTSA vs DT) "+attack_name+" majority agree with DTTSA "+str(majority_agree_with_dttsa)
+        #             dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],detection_msg)
+        #         else:
+        #             considerd_DTs.append(ip[0])
+            
+        #     if dttsa_attacked_dt_id == dt_attacked_dt_id and dttsa_report_dt_id == dt_report_dt_id and dttsa_qos_attack and dt_qos_attack and dttsa_attack_name==dt_attack_name:
+        #         detection_msg = "DT " + str(ip[0])+ " reporting DT " + str(ip[1]) + " incorrectly (DTTSA and DT) Valid "+dt_attack_name+" majority agree with DTTSA "+str(majority_agree_with_dttsa)
+        #         dttsaSupportServices.addVulnerableRepAttackPossibleDTs(ip[0],ip[1],detection_msg)
+
+        #     # prediction_list = []
+        #     # submitted_dt_ids = []
+        #     # hit_counts = []
+        #     # for i,ip in enumerate(impact_predictions):
+        #     #     prediction_list.append(ip[2])
+        #     #     submitted_dt_ids.append(ip[0])
+        #     #     hit_counts.append(ip[3])
+        #     # prediction_mismatch = DTSubmittedValueMismatchDetector(prediction_list)
+        #     # dt_id_mismatch = DTSubmittedValueMismatchDetector(submitted_dt_ids)
+        #     # hit_count_mismatch = DTSubmittedValueMismatchDetector(hit_counts)
+        #     # print(submitted_dt_ids)
+        #     # print(dt_id_mismatch)
+        #     # if prediction_mismatch and dt_id_mismatch:
+        #     #     print("different prediction from different DTs")
+        #     #     max_hit_count = max(hit_counts)
+        #     #     for i in range(len(prediction_list)):
+        #     #         if hit_counts[i] == max_hit_count:
+        #     # elif prediction_mismatch and dt_id_mismatch == False:
+        #     #     print("different predictions same DT")
+        #     # elif prediction_mismatch == False and dt_id_mismatch:
+        #     #     print("same prediction different DTs")
+        #     # v1 = impact_predictions[0][3]
+        #     # v2 = impact_predictions[1][3]
+        #     # if v1 == v2:
+        #     #     print("first two impact scores are equal")
+        #     #     if impact_predictions[0][0] == impact_predictions[1][0]:
+        #     #         print("first two equal impact socres from same DT")
+        #     #         majority_impact_prediction = impact_predictions[0][2]
+        #     #     else:
+        #     #         print("first two equal impact scores are not from same DT")
+        #     #         print("checking both predictions are same or not")
+        #     #         if impact_predictions[0][2] == impact_predictions[1][2]:
+        #     #             print("not equal DTs but same prediction")
+
+        #     # print(v1)
+        # elif len(qos_impact_predictions) == 1:
+        #     dttsaSupportServices.addDebugMsg(" inside len impact == 1 ")
+        #     if dttsa_qos_classification[0][7] != qos_impact_predictions[0][2]:
+                
+        #         attack_name = ""
+        #         if dttsa_qos_classification[0][7] == "n":
+        #             if qos_impact_predictions[0][2] == "c" or qos_impact_predictions[0][2] == "m":
+        #                 attack_name = "Bad Mouthing"
+        #         elif dttsa_qos_classification[0][7] == "c" or  dttsa_qos_classification[0][7] == "m":
+        #             if qos_impact_predictions[0][2] == "c" or qos_impact_predictions[0][2] == "n":
+        #                 attack_name = "Self Promote"
+        #         else:
+        #             attack_name = "DTTSA report "+ dttsa_qos_classification[0][7] + " reported "+ qos_impact_predictions[0][2]
+        #         print("DT ", qos_impact_predictions[0][0]," reporting DT ", qos_impact_predictions[0][1], " incorrectly (DTTSA vs DT)")
+        #         detection_msg = "DT " + str(qos_impact_predictions[0][0])+ " reporting DT " + str(qos_impact_predictions[0][1]) + " incorrectly (DTTSA vs DT) "+attack_name+" majority agree with DTTSA "+str(majority_agree_with_dttsa)
+        #         dttsaSupportServices.addVulnerableRepAttackPossibleDTs(qos_impact_predictions[0][0],qos_impact_predictions[0][1],detection_msg)
 
         print("______")
-
-
 
 def generatePasswordHash(password):
     hashedPassword = hashlib.md5(str(password)).hexdigest()
@@ -487,6 +948,11 @@ def reputationAttackAnalysis():
         print(trust_reports_values)
         print(trust_reports_qos)
         print("[][][][]")
+
+@app.route("/getrepinfo")
+def getTrustandReputationInfo():
+    dt_id = request.args.get('dt')
+    return "OK"
 
 @app.route("/test")
 def testService():

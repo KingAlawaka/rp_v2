@@ -485,6 +485,7 @@ class DTTSASupportServices:
             cur.execute('update dttsa_qos_staging_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update dttsa_dt_values_impact_categories_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update reputation_attack_possibilities set status=%s where status=1;',(iteration_count,))
+            cur.execute('update debug_msg set status=%s where status=1;',(iteration_count,))
             conn.commit()
             cur.close()
             conn.close()
@@ -574,10 +575,10 @@ class DTTSASupportServices:
         cur.close()
         conn.close()
 
-    def addVulnerableRepAttackPossibleDTs(self,dt_id,attacked_dt_id,analysis):
+    def addVulnerableRepAttackPossibleDTs(self,dt_id,attacked_dt,analysis,using_category,logic,attack,attack_type,rep_attack_prediction,confirmation,role):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('insert into reputation_attack_possibilities (dt_id,attacked_dt,analysis,status) values (%s,%s,%s,1)',(dt_id,attacked_dt_id,analysis))
+        cur.execute('insert into reputation_attack_possibilities (dt_id,attacked_dt,analysis,using_category,logic,attack,attack_type,rep_attack_prediction,confirmation,role,status) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1)',(dt_id,attacked_dt,analysis,using_category,logic,attack,attack_type,rep_attack_prediction,confirmation,role))
         conn.commit()
         cur.close()
         conn.close()
@@ -605,6 +606,39 @@ class DTTSASupportServices:
         records = cur.fetchall()
         cur.close()
         return records
+
+    def getDTtypePredictionHistory(self,dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct dt_id,dt_type,dt_type_predict,count(dt_type_predict) as hit_count from dt_type_tbl where dt_type_predict is not null and dt_id=%s group by dt_id,dt_type,dt_type_predict order by hit_count desc;',(dt_id,))
+        records = cur.fetchall()
+        cur.close()
+        return records
+
+    def addDebugMsg(self,msg):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into debug_msg (msg,status) values (%s,1)',(msg,))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    def getPossibleAttacks(self,hit_count):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from (select distinct dt_id,attacked_dt,count(attacked_dt) as hit_count from reputation_attack_possibilities where rep_attack_prediction=%s group by  dt_id,attacked_dt order by hit_count desc) as hit_pa where hit_pa.hit_count >= %s;',('PA',hit_count))
+        records = cur.fetchall()
+        cur.close()
+        return records
+    
+    def getPossibleAttackContinuityCount(self,dt_id,attacked_dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select distinct status from reputation_attack_possibilities where dt_id=%s and attacked_dt=%s order by status asc OFFSET 0 ROWS FETCH FIRST 3 ROWS ONLY;',(dt_id,attacked_dt_id))
+        records = cur.fetchall()
+        cur.close()
+        return records
+
 
     
 # 
