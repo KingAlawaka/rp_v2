@@ -46,6 +46,7 @@ app.config['postoutID'] = -1
 app.config['dt_type'] = "n"
 app.config['evaluation_msg'] = "n"
 app.config['iteration_count'] = 0
+app.config['rep_undecide_counter'] = 0
 
 
 URL_pattern_regex = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4})')
@@ -337,7 +338,7 @@ def recordExternalSub():
         print("current connection count" + str(c[0]))
     
     if app.config['getinID'] != -1 and app.config['getoutID'] != -1 and app.config['postinID'] != -1 and app.config['postoutID'] != -1:
-        if subAPI_ID in (app.config['getinID'],app.config['getoutID'],app.config['postinID'],app.config['postoutID']) and currentConCount < 5:
+        if subAPI_ID in (app.config['getinID'],app.config['getoutID'],app.config['postinID'],app.config['postoutID']) and currentConCount < 10:
             dbHelper.addExternalSub(subReq_type,subDT_ID,subAPI_ID,subURL,ex_dt_url)
             response = {"msg": "Subscribed successfully","status": "Success"},200
         else:
@@ -384,6 +385,178 @@ def recordInternalSub():
         print(e)
         res = {"msg": "No APIs yet"}
         return make_response(res,400)
+
+@app.get('/changecon')
+def changeConnections():
+    getRepAttackDTs = dbHelper.getReputationAttackDTs()
+    external_msg = []
+    internal_msg = []
+    if len(getRepAttackDTs) == 0:
+        getExternalSubs = dbHelper.getSubscriptionInfo('e')
+        getInternalSubs = dbHelper.getSubscriptionInfo('i')
+        external_msg = []
+        internal_msg = []
+        # all_done = True
+        if len(getExternalSubs) > 0:
+            for sub in getExternalSubs:
+                #url = URL_pattern_regex.search(sub[5])[0]
+                res = requests.get(dttsaURL()+'/getrepinfo?dt='+str(sub[3]))
+                data = json.loads(res.text)
+                #print(data['status'])
+                if data['rep_category'] == "False":
+                    print("no reputation status")
+                    external_msg.append([sub[3],"no reputation status"])
+                else:
+                    if data['rep_category'] == 'c':
+                        undecide_count = int(app.config['rep_undecide_counter']) + 1
+                        app.config.update(
+                            rep_undecide_counter = undecide_count
+                        )
+                    if data['rep_category'] == "m" or int(app.config['rep_undecide_counter']) >= 3:
+                        print("change")
+                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3]))
+                        res_data = json.loads(res.text)
+                       
+                        if res_data['change_req_status'] == 'sucess':
+                            #external connections recorded from other DTs to the DTTSA. So need to provide correct parameters to notify DTTSA
+                            res = requests.get(dttsaURL()+'/updatesubs?dt_id='+ str(sub[3]) +'&sub_dt_id='+str(app.config['DT_ID']))
+                            response_data = json.loads(res.text)
+                            if response_data['status'] == 'sucess':
+                                #external means other DT internal
+                                res = requests.get(str(sub[6])+'/conterminate?dt='+str(app.config['DT_ID'])+'&contype=i')
+                                response_data2 = json.loads(res.text)
+                                if response_data2['msg'] == 'sucess' or response_data2['msg'] == "No APIs yet":
+                                    res = requests.get(str(app.config['service_url'])+'/conterminate?dt='+str(sub[3])+'&contype=e')
+                                    response_data3 = json.loads(res.text)
+                                    if response_data3['msg'] != 'sucess':
+                                        external_msg.append([sub[3],"conterminate fail at DT side external tbl update"])
+                                    else:
+                                        external_msg.append([sub[3],"Sub changed sucess external"])
+                                else:
+                                    external_msg.append([sub[3],"conterminate fail at con DT side external"])
+                            else:
+                                external_msg.append([sub[3],"update sub DTTSA failed external"])
+                        else:
+                            external_msg.append([sub[3],data['rep_category'],res_data['change_req_status']])
+                    else:
+                        external_msg.append([sub[3],data['rep_category']])
+
+                            # 4 update status of the external table
+
+                            #notify the DT about connection termination 2
+                            # 3 con dt need to update its connection (one or more formula points will need to update)
+                            #need to update dttsa sub table 1
+
+
+
+        if len(getInternalSubs) > 0:
+            for sub in getInternalSubs:
+                res = requests.get(dttsaURL()+'/getrepinfo?dt='+str(sub[3]))
+                data = json.loads(res.text)
+                if data['rep_category'] == "False":
+                    print("no reputation status")
+                    internal_msg.append([sub[3],"no reputation status"])
+                else:
+                    if data['rep_category'] == "c":
+                        undecide_count = int(app.config['rep_undecide_counter']) + 1
+                        app.config.update(
+                            rep_undecide_counter = undecide_count
+                        )
+
+                    if data['rep_category'] == "m" or int(app.config['rep_undecide_counter']) >= 3:
+                        print("change")
+                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3]))
+                        res_data = json.loads(res.text)
+
+                        if res_data['change_req_status'] == 'sucess':
+                            #Internal connections recorded from DTs to the DTTSA. So need to provide correct parameters to notify DTTSA
+                            res = requests.get(dttsaURL()+'/updatesubs?dt_id='+ str(app.config['DT_ID']) +'&sub_dt_id='+str(sub[3]))
+                            response_data = json.loads(res.text)
+                            if response_data['status'] == 'sucess':
+                                #external means other DT internal
+                                sub_dt_url = URL_pattern_regex.search(sub[5])[0]
+                                res = requests.get('http://'+str(sub_dt_url)+'/conterminate?dt='+str(app.config['DT_ID'])+'&contype=e')
+                                response_data2 = json.loads(res.text)
+                                if response_data2['msg'] == 'sucess' or response_data2['msg'] == "No APIs yet":
+                                    res = requests.get(str(app.config['service_url'])+'/conterminate?dt='+str(sub[3])+'&contype=i')
+                                    response_data3 = json.loads(res.text)
+                                    if response_data3['msg'] != 'sucess':
+                                        internal_msg.append([sub[3],"conterminate fail at DT side internal tbl update"])
+                                    else:
+                                        internal_msg.append([sub[3],"sub change sucess internal"])
+                                else:
+                                    internal_msg.append([sub[3],"conterminate fail at con DT side internal"])
+                            else:
+                                internal_msg.append([sub[3],"update sub DTTSA failed internal"])
+                        else:
+                            internal_msg.append([sub[3],data['rep_category'],res_data['change_req_status']])
+                    else:
+                        internal_msg.append([sub[3],data['rep_category']])
+    
+    res = {"external_conn": external_msg, "internal_conn": internal_msg}
+    return make_response(res,200)
+
+    # for each connected DT check reputation if its negative change
+
+'''
+Other DTs will use this service to notify service terminations
+'''
+@app.route('/conterminate')
+def connectionTermination():
+    dt_id = request.args.get('dt')
+    con_type = request.args.get('contype')
+    if con_type == "i":
+        current_details = dbHelper.getFormulaPositions(dt_id)
+        APIs = requests.get(dttsaURL()+'/getapis/?dt_id='+str(app.config['DT_ID']))
+        print("APIS "+str(APIs))
+            #similar to subin for each formula position
+        try:
+            apiList = APIs.json()['APIs']
+                # print(apiList)
+                # print(externalVarLocations)
+            for varLocation in current_details:
+                print("var location "+str(varLocation))
+                sub_success = False
+                while sub_success == False:
+                    selectedIndex = random.choice(apiList)
+                        
+                        #TODO local env use IPs and using a regex IP extracted. cloud env need full
+                        # temp_DT_IP = URL_pattern_regex.search(selectedIndex['URL'])[0]
+                    sub_dt_url = URL_pattern_regex.search(selectedIndex['URL'])[0]
+                    print(sub_dt_url)
+                    if selectedIndex['type'] == 'POST':
+                        url = str(app.config['service_url']) +"/getpost/"
+                    else:
+                        url = selectedIndex['URL']
+                        # print('http://'+ temp_DT_IP +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                        # res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                    res = requests.get('http://'+ sub_dt_url +'/sub?dt_id='+ str(app.config['DT_ID'])+'&api_id='+ str(selectedIndex['API_ID'])+'&url='+url+'&req='+selectedIndex['type']+'&dt_url='+ str(app.config['service_url']))
+                    print("sub status code "+str(res.status_code))
+                    if res.status_code == 200:
+                        dbHelper.updateSubs("i",dt_id)
+                        dbHelper.addInternalSub(selectedIndex['type'],selectedIndex['DT_ID'],selectedIndex['API_ID'],selectedIndex['URL'],varLocation[0])
+                        sub_success = True
+                        subs = [
+                        {
+                            "sub_dt_id": selectedIndex['DT_ID'],
+                            "sub_api_id": selectedIndex['API_ID'],
+                            "url": selectedIndex['URL'],
+                            "req_type": selectedIndex['type']
+                        }]
+                        payload = {"dt_id": app.config['DT_ID'] , "sublist" : subs}
+                        # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/sublist',json= payload)
+                        res = requests.post(dttsaURL() +'/sublist',json= payload)
+            
+            res = {"msg": "sucess"}
+            # return make_response(res,200)
+        except Exception as e:
+            print(e)
+            res = {"msg": "No APIs yet"}
+    else:
+        dbHelper.updateSubs("e",dt_id)
+        res = {"msg": "sucess"}
+    return make_response(res,200)
+
 
 '''
 Calculate formula value and save in the local DB

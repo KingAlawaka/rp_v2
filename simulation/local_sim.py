@@ -78,6 +78,12 @@ def startupDTTSA(server_name):
                 print("DTTSA started correctly")
             else:
                 print(r.text)
+        u = makeURL(server_name,dttsa_port)+"/dttsa_start"
+        r = requests.get(u,verify=False)
+        if r.text == "Success":
+            print("DTTSA started correctly")
+        else:
+            print(r.text)
     except Exception as e:
         print("startup DTTSA Error: "+ str(e))
 
@@ -307,7 +313,7 @@ def main():
     # restartDTTSA(main_server)
     # # restartDTTSA(main_server2)
     # time.sleep(20)
-    # startupDTTSA(main_server)
+    startupDTTSA(main_server)
     # startupDTTSA(main_server2)
 
     #TODO restart DTs

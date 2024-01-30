@@ -387,7 +387,19 @@ select distinct dt_id,sub_dt_id from dt_sub_tbl
 except
 select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl;
 
+select function_name, extract(epoch from e2.timestamp - e1.timestamp) / 60 difference
+from   (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Started' order by timestamp asc
+) e1
+join (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Finished' order by timestamp asc
+)   e2 using (function_name)
+where  e1.function_name = e2.function_name;
 
+select function_name, extract(epoch from e2.timestamp - e1.timestamp) / 60 difference
+from   (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Started' order by timestamp asc
+) e1
+join (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Finished' order by timestamp asc
+)   e2 using (function_name)
+where  e1.function_name = e2.function_name;
 
 
 

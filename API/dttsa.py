@@ -72,6 +72,8 @@ app.config['qos_number_of_tests'] = 5
 app.config['qos_loop_times'] = 1
 app.config['rep_attack_analysis_started'] = False
 
+app.config['dependecy_graph_image_counter'] = 0
+
 '''
 Check API vulnerbility finished results for submitted DTs
 '''
@@ -134,8 +136,6 @@ def impactMajorityDetector(impacts,type_index,add_val_index):
 
 
     return multiple_majority,majority_impact
-
-     
 
 def repAttackCheck():
     # app.config.update(
@@ -719,17 +719,36 @@ def generateDependecyGraph():
     # evaluation()
     #df = pd.read_csv('data.csv')
     strfile="../Dashboardnew/static/assets/img/Graph.png"
+    dependencyGraphImgs = "../Dashboardnew/static/assets/img/col/"
     records = dttsaSupportServices.getDTDependencies()
     save_loc = "csv/Graph.png"
     
     G=nx.DiGraph()
     for record in records:
         G.add_edge(str(record[1]), str(record[0]),weight=record[2]) #edge drawing from source to destination in order to correctly show that change order
-        print(str(record[0]), str(record[1]),record[2])
-    node_sizes =1500# [3 + 10 * i for i in range(len(G))]
+        # print(str(record[0]), str(record[1]),record[2])
+    color_map = []
+    for node in G:
+        # print("Node ",str(node))
+        dt_type = dttsaSupportServices.getReputationLabelForDT(node)
+        if (len(dt_type)>0):
+            if  dt_type[0][0] == 'n':
+                color_map.append('green')
+            elif dt_type[0][0] == 'c':
+                color_map.append('yellow')
+            elif dt_type[0][0] == 'm':
+                color_map.append('red')
+            else:
+                color_map.append('gray')
+        else:
+            color_map.append('gray')
+
+
+    # node_sizes =1500# [3 + 10 * i for i in range(len(G))]
     pos = nx.spring_layout(G)
+    # pos = nx.nx_pydot.graphviz_layout(G)
     cmap = plt.cm.plasma
-    nx.draw_networkx(G,pos,node_size=1500, node_color='yellow', font_size=8, font_weight='bold',with_labels=True,arrows=True)
+    nx.draw_networkx(G,pos,node_size=1000, node_color=color_map, font_size=8, font_weight='bold',with_labels=True,arrows=True)
     # nx.draw_networkx_nodes(G,pos,node_size=node_sizes,node_color='yellow')
     # nx.draw_networkx_edges(G,pos,node_size=node_sizes,arrowstyle="->",arrowsize=10,edge_cmap=cmap,width=2)
     #print(nx.is_directed(G))
@@ -773,6 +792,17 @@ def generateDependecyGraph():
         os.remove(strfile)
     plt.savefig(strfile, format="PNG")
 
+    if app.config['dependecy_graph_image_counter'] == 0:
+        image_names = os.listdir('../Dashboardnew/static/assets/img/col/')
+        for i in image_names:
+            os.remove(dependencyGraphImgs+str(i))
+
+    #for Dependecy graph collection
+    app.config.update(
+        dependecy_graph_image_counter = app.config['dependecy_graph_image_counter']+ 1
+    )
+    plt.savefig(dependencyGraphImgs+str(app.config['dependecy_graph_image_counter'])+"_.png", format="PNG")
+
     #for csv folder
     if os.path.isfile(save_loc):
         os.remove(save_loc)
@@ -792,7 +822,6 @@ def configureQoSParameters():
     )
     msg = {"status" : "QoS Config Done"}, 200
     return msg
-
 
 @app.route("/analyze")
 def startAnalayze():
@@ -889,7 +918,6 @@ def reputationAnalysis():
         print(d[0])
         reputationClassification(d[0],data)
 
-
 def reputationClassification(dt_id,data):
     pos_count = 0
     min_count = 0
@@ -949,10 +977,41 @@ def reputationAttackAnalysis():
         print(trust_reports_qos)
         print("[][][][]")
 
+#/reqchange?dt=1
+@app.route("/reqchange")
+def requestConnectionChange():
+    dt_id = request.args.get('dt')
+    con_dt_id = request.args.get('con_dt')
+    dt_rep_counts = dttsaSupportServices.getReputationLabelForDT(dt_id)
+    con_dt_rep_counts = dttsaSupportServices.getReputationLabelForDT(con_dt_id)
+    dt_rep_type = ''
+    con_dt_rep_type = ''
+    permission = 0
+    if (len(dt_rep_counts)>0):
+        dt_rep_type =  dt_rep_counts[0][0]
+
+    if (len(con_dt_rep_counts)>0):
+        con_dt_rep_type =  con_dt_rep_counts[0][0]
+    
+    if dt_rep_type == 'n' and (con_dt_rep_type == 'c' or con_dt_rep_type == 'm'):
+        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,1)
+        msg = {"change_req_status": "sucess"}
+    else:
+        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,0)
+        msg = {"change_req_status": "fail"}
+    
+    return make_response(msg,200)
+
 @app.route("/getrepinfo")
 def getTrustandReputationInfo():
     dt_id = request.args.get('dt')
-    return "OK"
+    rep_counts = dttsaSupportServices.getReputationLabelForDT(dt_id)
+    if (len(rep_counts)>0):
+        res = {"rep_category": rep_counts[0][0]}
+    else:
+        res = {"rep_category": "False"}
+    
+    return make_response(res,200)
 
 @app.route("/test")
 def testService():
@@ -962,7 +1021,6 @@ def testService():
     # re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
     repAttackCheck()
     return "ok"
-
 
 @app.route("/save")
 def saveTblToCSV():
@@ -1351,7 +1409,6 @@ def qosAnalysisLogic():
         #             qos_analysis_started = False
         #         )
 
-
 @app.route('/eval')
 def evaluation():
     '''
@@ -1567,6 +1624,14 @@ def getDTType(dt_id):
         print(data['dt_type'])
         return data['dt_type']
 
+@app.route('/network')
+def DisplayDTNetwork():
+    image_names = os.listdir('../Dashboardnew/static/assets/img/col/')
+    urls = []
+    for i in image_names:
+        urls.append("/static/assets/img/col/"+str(i))
+
+    return render_template('home/network.html',image_names = urls)
         
 @app.route('/logout')
 def logout():
@@ -1622,7 +1687,6 @@ def imapactCategorization(val,test_type):
     impact_counts = [low_count,mid_count,high_count]
     return impact_counts,DTTypeDetector(impact_counts)
 
-
 def dtValueImpactCategorization(dt_id,report):
     for r in report:
         sub_dt_id = str(r['dt_id'])
@@ -1640,7 +1704,6 @@ def dtValueImpactCategorization(dt_id,report):
             val,classification = imapactCategorization(float(stdev_value),'Values')
             dttsaSupportServices.addDTReportImpactCategories(dt_id,sub_dt_id,category,"std",val[0],val[1],val[2],classification)
         
-
 @app.post("/report")
 def submitDTReports():
     content = request.get_json()
@@ -1746,12 +1809,37 @@ def getOwnAPIs():
         } for api in API_list]
     return {"count": len(res), "APIs" : res}
 
+@app.get("/updatesubs")
+def updateDTSubs():
+    DT_ID  = request.args.get('dt_id')
+    sub_dt_id = request.args.get('sub_dt_id')
+    dttsaSupportServices.updateDTSubs(DT_ID,sub_dt_id)
+    res = {"status" : "sucess"}
+    return make_response(res,200)
+
 @app.get("/getapis/")
 def getDTAPIs():
-    DT_ID  = request.args.get('dt_id'),
-    API_list = dttsaSupportServices.getOtherDTAPIs(DT_ID)
-    
-    res = [
+    DT_ID  = request.args.get('dt_id')
+    res = []
+    rep_counts = dttsaSupportServices.getReputationLabelForDT(DT_ID)
+    print(rep_counts)
+    if (len(rep_counts)>0):
+        # res = {"rep_category": }
+        print(rep_counts[0][0])
+        if rep_counts[0][0] != 'm' or rep_counts[0][0] != 'c' :
+            API_list = dttsaSupportServices.getOtherDTAPIsConsideringTrust(DT_ID)
+            res = [
+            {
+                "API_ID": api[0],
+                "DT_ID": api[1],
+                "URL": api[2],
+                "desc": api[3],
+                "type": api[4],
+                "sample": api[5]
+            } for api in API_list]
+    else:
+        API_list = dttsaSupportServices.getOtherDTAPIs(DT_ID)
+        res = [
         {
             "API_ID": api[0],
             "DT_ID": api[1],
@@ -1760,6 +1848,8 @@ def getDTAPIs():
             "type": api[4],
             "sample": api[5]
         } for api in API_list]
+
+    
     return {"count": len(res), "APIs" : res}
 
 @app.route('/regbackup')

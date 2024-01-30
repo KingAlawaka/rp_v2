@@ -418,6 +418,24 @@ class DBHelper:
             connection.close()
         except Exception as e:
             print("except: addAttackConfiguration ", str(e))
+    
+    def updateSubs(self,tbl_name,dt_id):
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            if tbl_name == 'i':
+                cur.execute('update subs_internal_tbl set status = -1 where DT_ID = '+str(dt_id)+';')
+            else:
+                cur.execute('update subs_external_tbl set status = -1 where DT_ID = '+str(dt_id)+';')
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            print("except: updateSubs ", str(e))
+
+    def getFormulaPositions(self,dt_id):
+        allRows = self.readDB('SELECT formula_position FROM subs_internal_tbl where dt_id='+str(dt_id)+' and status=1;')
+        return allRows
+
 
     
 

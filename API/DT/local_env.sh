@@ -6,7 +6,7 @@ do
         kill -9 $(lsof -i:$(( p + i )) -t) 2> /dev/null
 done
 
-for i in {1..7}
+for i in {1..5}
 do
         # echo $(( p + i ))
         # echo data${i}.db

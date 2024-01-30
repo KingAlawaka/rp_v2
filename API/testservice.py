@@ -22,6 +22,22 @@ def readJson():
     for i in data['trust categories']:
         print(i["category"])
 
+@app.get('/firefly')
+def testFireFly():
+    dt = request.args.get('dt')
+    connectDT = request.args.get('condt')
+    url = 'http://127.0.0.1:5109/api/messages/broadcast?ns=default'
+    myobj = {
+    "value": "",
+    "jsonValue": {"DT_ID": dt,"connect": connectDT},
+    "datatypename": "", 
+    "datatypeversion" : "" }
+
+    x = requests.post(url, json = myobj)
+    print(x.elapsed.total_seconds())
+    print(x.text)
+    retValue = {"response": str(x.text), "response time": str(x.elapsed.total_seconds())}
+    return retValue
 
 @app.get('/test')
 def DTregService():

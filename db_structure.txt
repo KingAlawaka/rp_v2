@@ -336,3 +336,14 @@ create table debug_msg(
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
+
+create table change_requests_tbl(
+	id serial,
+	dt_id int,
+	change_dt int,
+	dt_rep_cat text,
+	change_dt_rep_cat text,
+	result int, -- 1 for approve 0 for decline
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);

@@ -143,6 +143,16 @@ class DTTSASupportServices:
         cur.close()
         return DTs
     
+    def getOtherDTAPIsConsideringTrust(self,DT_ID):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        # cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]');",(DT_ID))
+        cur.execute("select * from api_tbl where DT_ID !=%s and status=1 and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID in (select distinct dt_id from dt_type_tbl where dt_type_predict is not null and dt_type_predict='n' order by dt_id asc) and DT_ID not in (select sub_dt_id from dt_sub_tbl where dt_id=%s and status=-1);",(DT_ID,DT_ID))
+        #cur.execute('select * from api_tbl where DT_ID != %s;',(DT_ID))
+        DTs = cur.fetchall()
+        cur.close()
+        return DTs
+    
     def getDTDependencies(self):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
@@ -359,6 +369,18 @@ class DTTSASupportServices:
         records = cur.fetchall()
         cur.close()
         return records
+    
+    def updateDTSubs(self,dt_id,sub_dt_id):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            cur.execute('update dt_sub_tbl set status=-1 where dt_id=%s and sub_dt_id=%s and status=1;',(dt_id,sub_dt_id))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: updateDTSubs ", str(e))
+
     
     def updateDTTypeTblWithPrediction(self,dt_id,prediction):
         try:
@@ -638,10 +660,28 @@ class DTTSASupportServices:
         records = cur.fetchall()
         cur.close()
         return records
+    
+    def getReputationLabelForDT(self,dt_id):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select dt_type_predict,count(dt_type_predict) as type_count from dt_type_tbl where dt_type_predict is not null and dt_id=%s group by dt_type_predict order by type_count desc;',(dt_id,))
+        records = cur.fetchall()
+        cur.close()
+        return records
+
+    def addConnectionChangeRequest(self,dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('insert into change_requests_tbl (dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result) values (%s,%s,%s,%s,%s);',(dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result))
+        conn.commit()
+        cur.close()
+        conn.close()
+
 
 
     
 # 
+
 
     # def addAPISecurityCheck(self,DT_ID,API_ID,scan_id):
     #     try:
