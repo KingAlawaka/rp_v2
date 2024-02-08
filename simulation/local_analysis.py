@@ -35,6 +35,7 @@ asia_server = "34.173.139.246"
 north_server = "35.239.37.79"
 dttsa_port = 9000
 
+
 sim_prefix = "sim"
 
 sim_started = False
@@ -91,6 +92,12 @@ def cloudSimStart():
         r = requests.get(u,verify=False)
         if r.json()['status'] == "Evaluation completed, analysis completed":
             print("Anlysis Done")
+            u1 = makeURL("127.0.0.1",9500)+"/changecon"
+            r1 = requests.get(u1,verify=False)
+            u2 = makeURL("127.0.0.1",9200)+"/changecon"
+            r2 = requests.get(u2,verify=False)
+            u3 = makeURL("127.0.0.1",9300)+"/changecon"
+            r3 = requests.get(u3,verify=False)
             # evaluteSimulation()
             # saveSimulationFiles()
             # saveFiles(sim_prefix+"_"+str(sim_DTs[sim_count-1])+"_"+str(number_of_simulations))

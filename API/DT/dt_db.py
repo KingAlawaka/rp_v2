@@ -281,6 +281,10 @@ class DBHelper:
         allRows = self.readDB('select  DT_ID,data_type,stdev_value,min,max,avg from final_value_tbl where status=1;')
         return allRows
     
+    def getConnectionChangeValueTbl(self):
+        allRows = self.readDB('select * from connection_change_time_tbl where status=1;')
+        return allRows
+    
     def getAllValuesFromDT(self,DT_ID):
         q = 'select value from data_tbl where DT_ID='+ str(DT_ID)+' and status=1;'
         #print(q)
@@ -401,6 +405,8 @@ class DBHelper:
             cur.execute('update data_dt_gen_tbl set status ='+str(iteration_counter)+' where status = 1;')
             cur.execute('update cal_data_tbl set status ='+str(iteration_counter)+' where status = 1;')
             cur.execute('update formula_cal_tbl set status ='+str(iteration_counter)+' where status = 1;')
+            cur.execute('update connection_change_time_tbl set status ='+str(iteration_counter)+' where status = 1;')
+            cur.execute('update connection_change_requests set status ='+str(iteration_counter)+' where status = 1;')
             #cur.execute('insert into subs_internal_tbl (direction,req_type,DT_ID,API_ID,url,formula_position,status) values ("from","'+req_type+'",'+ str(DT_ID)+','+str(API_ID)+',"'+url+'",'+ str(formula_position)+',1);')
             connection.commit()
             connection.close()
@@ -435,6 +441,46 @@ class DBHelper:
     def getFormulaPositions(self,dt_id):
         allRows = self.readDB('SELECT formula_position FROM subs_internal_tbl where dt_id='+str(dt_id)+' and status=1;')
         return allRows
+    
+    def insertConnectionChangeTimeTbl(self,DT_ID,elapsed_time,response_status):
+        qu = ""
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            #qu = 'insert into data_sent_tbl (req_type,reciever_DT_ID,API_ID,value) values ("'+ req_type +'",'+ str(DT_ID)+','+str(API_ID)+','+str(value)+');'
+            cur.execute('insert into connection_change_time_tbl (DT_ID,elapsed_time,response,status) values ('+ str(DT_ID)+','+str(elapsed_time)+',"'+str(response_status)+'",1);')
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values (%s,%s,%s,%s,1);',(req_type,DT_ID,API_ID,value)
+            #v = 'insert into data_tbl (req_type,DT_ID,API_ID,value,used) values ('+ req_type +','+ str(DT_ID)+','+str(API_ID)+','+str(value)+',0);'
+            print("except: insertConnectionChangeTimeTbl ", str(e))
+
+    def updateChangeCons(self,con_dt_id,response):
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            cur.execute('update connection_change_requests set response="'+str(response)+'",complete_time=(select strftime("%Y-%m-%d %H:%M:%f", "now"))  where con_DT_ID = '+str(con_dt_id)+' and status = 1;')
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            print("except: updateSubs ", str(e))
+
+    def insertChangeCons(self,con_dt_id):
+        try:
+            connection = self.get_db_connection()
+            cur = connection.cursor()
+            cur.execute('insert into connection_change_requests (con_DT_ID,response,status,init_time) values ('+str(con_dt_id)+',"na",1,(select strftime("%Y-%m-%d %H:%M:%f", "now")));')
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            print("except: updateSubs ", str(e))
+    
+    def getEclipedTimeForChangeCon(self,con_dt_id):
+        allRows = self.readDB('select id,init_time,complete_time,((JULIANDAY(complete_time) - JULIANDAY(init_time)) * 86400.0) AS elapsed_time from connection_change_requests where status=1 and response != "na" and con_DT_ID ='+str(con_dt_id)+';')
+        return allRows
+    
+
 
 
     

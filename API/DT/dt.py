@@ -386,6 +386,17 @@ def recordInternalSub():
         res = {"msg": "No APIs yet"}
         return make_response(res,400)
 
+@app.get('/reqchangereply')
+def changeReqReply():
+    con_dt_id = request.args.get('con_dt')
+    reply = request.args.get('reply')
+    dbHelper.updateChangeCons(con_dt_id,reply)
+    time = dbHelper.getEclipedTimeForChangeCon(con_dt_id)
+    for t in time:
+        dbHelper.insertConnectionChangeTimeTbl(str(con_dt_id),t[3],reply)
+    return "ok"
+
+
 @app.get('/changecon')
 def changeConnections():
     getRepAttackDTs = dbHelper.getReputationAttackDTs()
@@ -414,9 +425,12 @@ def changeConnections():
                         )
                     if data['rep_category'] == "m" or int(app.config['rep_undecide_counter']) >= 3:
                         print("change")
-                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3]))
+                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3])+'&url='+str(app.config['service_url']))
                         res_data = json.loads(res.text)
-                       
+                        dbHelper.insertChangeCons(str(sub[3]))
+                        # dbHelper.insertConnectionChangeTimeTbl(str(app.config['DT_ID']),res.elapsed.total_seconds(),res_data['change_req_status'])
+                        # res.elapsed.total_seconds()
+                        
                         if res_data['change_req_status'] == 'sucess':
                             #external connections recorded from other DTs to the DTTSA. So need to provide correct parameters to notify DTTSA
                             res = requests.get(dttsaURL()+'/updatesubs?dt_id='+ str(sub[3]) +'&sub_dt_id='+str(app.config['DT_ID']))
@@ -465,9 +479,12 @@ def changeConnections():
 
                     if data['rep_category'] == "m" or int(app.config['rep_undecide_counter']) >= 3:
                         print("change")
-                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3]))
+                        res = requests.get(dttsaURL()+'/reqchange?dt='+ str(app.config['DT_ID']) +'&con_dt='+str(sub[3])+'&url='+str(app.config['service_url']))
                         res_data = json.loads(res.text)
-
+                        print(res.elapsed.total_seconds())
+                        print(res_data['change_req_status'])
+                        dbHelper.insertChangeCons(str(sub[3]))
+                        # dbHelper.insertConnectionChangeTimeTbl(str(app.config['DT_ID']),res.elapsed.total_seconds(),res_data['change_req_status'])
                         if res_data['change_req_status'] == 'sucess':
                             #Internal connections recorded from DTs to the DTTSA. So need to provide correct parameters to notify DTTSA
                             res = requests.get(dttsaURL()+'/updatesubs?dt_id='+ str(app.config['DT_ID']) +'&sub_dt_id='+str(sub[3]))
@@ -876,7 +893,14 @@ def sendReportDTTSA():
         "max": d[4],
         "avg": d[5]
     } for d in data]
-    payload = {"dt_id": app.config['DT_ID'],"dt_type": app.config['dt_type'], "report": report }
+
+    data2 = dbHelper.getConnectionChangeValueTbl()
+    change_con_report = [{
+        "elapsed_time" : d[2],
+        "response": d[3]
+    } for d in data2]
+
+    payload = {"dt_id": app.config['DT_ID'],"dt_type": app.config['dt_type'], "report": report, "change_con_report": change_con_report }
     # res = requests.post('http://'+ app.config['DTTSA_IP'] +':9000/report',json= payload)
     res = requests.post(dttsaURL() +'/report',json= payload)
     msg = ""
@@ -889,6 +913,7 @@ def sendReportDTTSA():
 
 @app.get("/test")
 def testService():
+    dbHelper.insertChangeCons(1)
     l = ["n","c","m"]
     return json.dumps({
         'Organization' : org_code,

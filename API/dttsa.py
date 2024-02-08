@@ -977,16 +977,45 @@ def reputationAttackAnalysis():
         print(trust_reports_qos)
         print("[][][][]")
 
+@app.route("/reqchangereturn")
+def requestChangeReturnFromChain():
+    dt_id = request.args.get('dt')
+    con_dt_id = request.args.get('con_dt')
+    reply = request.args.get('reply')
+    
+    dt_url = dttsaSupportServices.getConnectionChangeDTUrl(dt_id,con_dt_id)
+    dttsaSupportServices.updateConnectionChangeRequest(dt_id,con_dt_id,reply)
+    for u in dt_url:
+        res = requests.get(u[6]+"/reqchangereply?con_dt="+str(con_dt_id)+"&reply="+str(reply))
+    msg = "done"
+    return make_response(msg,200)
+
+
+
 #/reqchange?dt=1
 @app.route("/reqchange")
 def requestConnectionChange():
+    #TODO change oracle URL
+    oracle_req_url = "http://34.16.92.58:9100"
+    # oracle_req_url = "http://127.0.0.1:9100"
     dt_id = request.args.get('dt')
     con_dt_id = request.args.get('con_dt')
+    dt_url=request.args.get('url')
+    # v = random.randint(0,1)
+    # if v == 1:
+    #     dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,"dt_rep_type","con_dt_rep_type",1)
+    #     msg = {"change_req_status": "sucess"}
+    # else:
+    #     dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,"dt_rep_type","con_dt_rep_type",0)
+    #     msg = {"change_req_status": "fail"}
+    
     dt_rep_counts = dttsaSupportServices.getReputationLabelForDT(dt_id)
     con_dt_rep_counts = dttsaSupportServices.getReputationLabelForDT(con_dt_id)
     dt_rep_type = ''
     con_dt_rep_type = ''
     permission = 0
+    
+    
     if (len(dt_rep_counts)>0):
         dt_rep_type =  dt_rep_counts[0][0]
 
@@ -994,10 +1023,14 @@ def requestConnectionChange():
         con_dt_rep_type =  con_dt_rep_counts[0][0]
     
     if dt_rep_type == 'n' and (con_dt_rep_type == 'c' or con_dt_rep_type == 'm'):
-        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,1)
+        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,"1",dt_url)
+        oracle_url = oracle_req_url+"/firefly?dt="+str(dt_id)+"&condt="+str(con_dt_id)+"&rep=n"
+        res = requests.get(oracle_url)
         msg = {"change_req_status": "sucess"}
     else:
-        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,0)
+        dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,"0",dt_url)
+        oracle_url = oracle_req_url+"/firefly?dt="+str(dt_id)+"&condt="+str(con_dt_id)+"&rep=m"
+        res = requests.get(oracle_url)
         msg = {"change_req_status": "fail"}
     
     return make_response(msg,200)
@@ -1711,9 +1744,11 @@ def submitDTReports():
     try:
         dt_id = str(content['dt_id'])
         report = content['report']
+        change_con_report = content['change_con_report']
         dt_type = str(content['dt_type'])
         dttsaSupportServices.addDTType(dt_id,dt_type)
         dttsaSupportServices.addDTReports(dt_id,report)
+        dttsaSupportServices.addDTChangeConReports(dt_id,change_con_report)
         dtValueImpactCategorization(dt_id,report)
         msg = "sucesss"
         res = {"status": msg},200

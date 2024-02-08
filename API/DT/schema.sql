@@ -15,6 +15,8 @@ drop table if EXISTS dt_details_tbl;
 drop table if EXISTS trend_analysis_tbl;
 drop table if EXISTS reputation_attack_config_tbl;
 drop table if EXISTS debug_tbl;
+drop table if EXISTS connection_change_time_tbl;
+drop table if EXISTS connection_change_requests;
 
 --record all the internal transaction happening in the DT
 create table trans_tbl(
@@ -211,5 +213,23 @@ create table debug_tbl(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     msg TEXT NOT NULL,
+    status INTEGER
+);
+
+create table connection_change_time_tbl(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    DT_ID INTEGER,
+    elapsed_time float,
+    response TEXT NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status INTEGER
+);
+
+create table connection_change_requests(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    con_DT_ID INTEGER,
+    response TEXT,
+    init_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    complete_time TIMESTAMP,
     status INTEGER
 );

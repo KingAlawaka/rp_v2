@@ -81,3 +81,18 @@ cur.execute('update trust_effect_calculation_tbl set status=-1 where status=1;',
 
 
 
+curl -X 'POST' \
+  'http://127.0.0.1:5001/api/contracts/api/DTChangeConnection/invoke/changeConnection' \
+  -H 'accept: application/json' \
+  -H 'Request-Timeout: 2m0s' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "idempotencyKey": "",
+  "input": {
+    "_condt": "1",
+    "_dt": "1",
+    "_reptype": "n"
+  },
+  "key": "",
+  "options": {}
+}'

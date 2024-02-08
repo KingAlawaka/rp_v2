@@ -137,7 +137,7 @@ class DTTSASupportServices:
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
         # cur.execute("select * from api_tbl where DT_ID !=%s and (description = '[GET][OUT]' or description = '[POST][OUT]');",(DT_ID))
-        cur.execute("select * from api_tbl where DT_ID !=%s and status=1 and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID not in (select sub_dt_id from dt_sub_tbl where status=1 group by sub_dt_id having count(*) > 5) ;",(DT_ID))
+        cur.execute("select * from api_tbl where DT_ID !=%s and status=1 and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID not in (select sub_dt_id from dt_sub_tbl where status=1 group by sub_dt_id having count(*) > 5) ;",(DT_ID,))
         #cur.execute('select * from api_tbl where DT_ID != %s;',(DT_ID))
         DTs = cur.fetchall()
         cur.close()
@@ -291,6 +291,20 @@ class DTTSASupportServices:
             conn.close()
         except Exception as e:
             print("error: addDTReports ", str(e))
+
+    def addDTChangeConReports(self,dt_id,report):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            for r in report:
+                response_status = str(r['response'])
+                response_time = str(r['elapsed_time'])
+                cur.execute('insert into dt_change_con_data_submission_tbl  (DT_ID,response_status,response_time,status) values (%s,%s,%s,1);',(dt_id,response_status,response_time))
+                conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: addDTChangeConReports ", str(e))
 
     def saveTblsAsCSV(self):
         try:
@@ -508,6 +522,7 @@ class DTTSASupportServices:
             cur.execute('update dttsa_dt_values_impact_categories_tbl set status=%s where status=1;',(iteration_count,))
             cur.execute('update reputation_attack_possibilities set status=%s where status=1;',(iteration_count,))
             cur.execute('update debug_msg set status=%s where status=1;',(iteration_count,))
+            # cur.execute('update change_requests_tbl set status=%s where status=1;',(iteration_count,))
             conn.commit()
             cur.close()
             conn.close()
@@ -669,13 +684,29 @@ class DTTSASupportServices:
         cur.close()
         return records
 
-    def addConnectionChangeRequest(self,dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result):
+    def addConnectionChangeRequest(self,dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result,dt_url):
         conn = self.dbConnection.get_db_connection()
         cur = conn.cursor()
-        cur.execute('insert into change_requests_tbl (dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result) values (%s,%s,%s,%s,%s);',(dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result))
+        cur.execute('insert into change_requests_tbl (dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result,dt_url) values (%s,%s,%s,%s,%s,%s);',(dt_id,change_dt,dt_rep_cat,change_dt_rep_cat,result,dt_url))
         conn.commit()
         cur.close()
         conn.close()
+
+    def updateConnectionChangeRequest(self,dt_id,change_dt,request_verdict):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute("update change_requests_tbl set result=%s,status=-1,completed_timestamp=current_timestamp at time zone 'UTC' where dt_id = %s and change_dt = %s and status=1;",(request_verdict,dt_id,change_dt))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    def getConnectionChangeDTUrl(self,dt_id,con_dt):
+        conn = self.dbConnection.get_db_connection()
+        cur = conn.cursor()
+        cur.execute('select * from change_requests_tbl where dt_id=%s and change_dt=%s and status = 1; ',(dt_id,con_dt))
+        records = cur.fetchall()
+        cur.close()
+        return records
 
 
 

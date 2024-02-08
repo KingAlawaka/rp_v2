@@ -343,7 +343,19 @@ create table change_requests_tbl(
 	change_dt int,
 	dt_rep_cat text,
 	change_dt_rep_cat text,
-	result int, -- 1 for approve 0 for decline
+	result text,
+	dt_url text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	completed_timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+create table dt_change_con_data_submission_tbl
+(
+	id serial,
+	DT_ID int,
+	response_status text,
+    response_time float,
 	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
 	status int default 1
 );
