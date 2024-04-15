@@ -11,7 +11,7 @@ import argparse
 from apscheduler.schedulers.background import BackgroundScheduler
 
 st = time.time()
-client = docker.from_env()
+# client = docker.from_env()
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-n","--numDT", help="Number of DTs")
@@ -68,7 +68,7 @@ def restartDTTSA(server_name):
 
 def startupDTTSA(server_name):
     try:
-        url = makeURL(server_name,dttsa_port)+"/setconfigs?astra=http://172.17.0.5:8094/&db=172.17.0.2"
+        url = makeURL(server_name,dttsa_port)+"/setconfigs?astra=http://127.0.0.1:8094/&db=127.0.0.1"
         response = requests.get(url,verify=False)
         if response.text == makeURL(main_server,astra_port):
             print("DTTSA config correctly")

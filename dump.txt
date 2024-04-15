@@ -96,3 +96,13 @@ curl -X 'POST' \
   "key": "",
   "options": {}
 }'
+
+
+
+env config QoS simulation values for DT 
+m_min = 2
+m_max = 4
+c_min = 1
+c_max = 2
+n_min = 1
+n_max = 1
