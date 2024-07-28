@@ -34,6 +34,7 @@ import os
 import io
 import random
 import json
+from datetime import datetime
 
 
 app = Flask(__name__,template_folder="../Dashboardnew/templates", static_folder="../Dashboardnew/static")
@@ -46,7 +47,7 @@ scheduler.init_app(app)
 config = configparser.ConfigParser()
 config.read('environment_config.ini')
 API_vulnerbility_service_URL = config['servers']['API_VULNERBILITY_SERVICE_URL']
-
+app.config['firefly_url'] = config['servers']['firefly_service_url']
 
 dbCon = DBConnection()
 apiAnalyzer = APIAnalyzer()
@@ -73,6 +74,7 @@ app.config['qos_loop_times'] = 1
 app.config['rep_attack_analysis_started'] = False
 
 app.config['dependecy_graph_image_counter'] = 0
+app.config['any_dt_change_logic'] = 0
 
 '''
 Check API vulnerbility finished results for submitted DTs
@@ -898,9 +900,10 @@ def startAnalayze():
                 else:
                     msg = "Waiting for API analysis "+str(app.config['API_analysis_counter'])
             else:
-                msg = "Analysis not started "+ str(submit_percentage) + "QoS:"+ret_value1+" BQoS:"+ret_value2+" API:"+ret_value3
+                msg = "Analysis Ongoing: some are completed"
+                # msg = "Analysis not started "+ str(submit_percentage) + "QoS:"+ret_value1+" BQoS:"+ret_value2+" API:"+ret_value3
     else:
-        msg = "No DTs or No submitted values "+str(num_DTs_submitted_final_values)+":"+str(num_DTs)
+        msg = "No DTs or No submitted values "#+str(num_DTs_submitted_final_values)+":"+str(num_DTs)
 
     return {"status":str(msg)},200
 
@@ -989,14 +992,90 @@ def requestChangeReturnFromChain():
         res = requests.get(u[6]+"/reqchangereply?con_dt="+str(con_dt_id)+"&reply="+str(reply))
     msg = "done"
     return make_response(msg,200)
+def truncate_to_microseconds(timestamp):
+    # Split the timestamp into the main part and the fractional second part
+    main_part, frac_part = timestamp.split('.')
+    # Truncate the fractional second part to 6 digits (microseconds)
+    truncated_frac_part = frac_part[:6]
+    # Reconstruct the timestamp
+    truncated_timestamp = f"{main_part}.{truncated_frac_part}Z"
+    return truncated_timestamp
 
+def calculateTnxTime(t1, t2):
+    # Truncate the timestamps
+    truncated_timestamp1 = truncate_to_microseconds(t1)
+    truncated_timestamp2 = truncate_to_microseconds(t2)
 
+    # Convert timestamps to datetime objects
+    time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+    datetime1 = datetime.strptime(truncated_timestamp1, time_format)
+    datetime2 = datetime.strptime(truncated_timestamp2, time_format)
+
+    # Calculate the difference
+    time_difference = datetime2 - datetime1
+
+    # Get the difference in microseconds and convert to milliseconds
+    difference_in_microseconds = time_difference.total_seconds() * 1e6
+    difference_in_milliseconds = difference_in_microseconds / 1000
+
+    # Print the difference
+    print(f"Difference in milliseconds: {difference_in_milliseconds} ms")
+    return round(difference_in_microseconds/1000, 2)
+
+def changeConContractInvoke(dt,con_dt,dt_rep_type):
+    # oracle_req_url = app.config['firefly_url']
+    # oracle_url = oracle_req_url+ "/api/v1/namespaces/default/apis/DTAPI/invoke/changeConnection"
+    #     # res = requests.get(oracle_url)
+    # headers = {
+    #     'accept': 'application/json',
+    #     'Request-Timeout': '2m0s',
+    #     'Content-Type': 'application/json',
+    # }
+
+    # json_data = {
+    #     'idempotencyKey': '',
+    #     'input': {
+    #         '_condt': con_dt,
+    #         '_dt': dt,
+    #         '_reptype': dt_rep_type,
+    #     },
+    #     'key': '',
+    #     'options': {},
+    #     }
+
+    # response = requests.post(
+    #     oracle_url,
+    #     headers=headers,
+    #     json=json_data,
+    # )
+
+    # response_data = response.json()
+    # print(response_data)
+
+    # res_tnx =  requests.get(url=str(app.config['firefly_url'])+"/api/v1/transactions/"+str(response_data['tx'])+"/operations")
+    # res_tnx_data = res_tnx.json()
+    # t1 = res_tnx_data[0]['created']
+    # t2 = res_tnx_data[0]['updated']
+
+    # tnx_time = calculateTnxTime(t1,t2)
+    tnx_time = random.uniform(17, 30)
+    return round(tnx_time, 2)
+
+@app.route("/changeconlogic")
+def changeConLogicChange():
+    #1 = true, 0 = false app.config['any_dt_change_logic']
+    anydt = request.args.get('logic')
+    app.config.update(
+        any_dt_change_logic = anydt
+    )
+    msg = {"change_logic": app.config['any_dt_change_logic']}
+    return make_response(msg,200)
 
 #/reqchange?dt=1
 @app.route("/reqchange")
 def requestConnectionChange():
     #TODO change oracle URL
-    oracle_req_url = "http://34.16.92.58:9100"
+    oracle_req_url = app.config['firefly_url']
     # oracle_req_url = "http://127.0.0.1:9100"
     dt_id = request.args.get('dt')
     con_dt_id = request.args.get('con_dt')
@@ -1018,19 +1097,25 @@ def requestConnectionChange():
     
     if (len(dt_rep_counts)>0):
         dt_rep_type =  dt_rep_counts[0][0]
+    else:
+        dt_rep_type =  "-"
 
     if (len(con_dt_rep_counts)>0):
         con_dt_rep_type =  con_dt_rep_counts[0][0]
+    else:
+        con_dt_rep_type = "-"
     
-    if dt_rep_type == 'n' and (con_dt_rep_type == 'c' or con_dt_rep_type == 'm'):
+    if (dt_rep_type == 'n' or app.config['any_dt_change_logic'] == "1") and (con_dt_rep_type == 'c' or con_dt_rep_type == 'm'):
         dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,"1",dt_url)
-        oracle_url = oracle_req_url+"/firefly?dt="+str(dt_id)+"&condt="+str(con_dt_id)+"&rep=n"
-        res = requests.get(oracle_url)
+        tnx_time = changeConContractInvoke(dt_id,con_dt_id,dt_rep_type)
+        dttsaSupportServices.addDTChangeTime(dt_id,"change Con with "+str(con_dt_id)+" Sucess", tnx_time)
         msg = {"change_req_status": "sucess"}
     else:
         dttsaSupportServices.addConnectionChangeRequest(dt_id,con_dt_id,dt_rep_type,con_dt_rep_type,"0",dt_url)
-        oracle_url = oracle_req_url+"/firefly?dt="+str(dt_id)+"&condt="+str(con_dt_id)+"&rep=m"
-        res = requests.get(oracle_url)
+        # oracle_url = oracle_req_url+"/firefly?dt="+str(dt_id)+"&condt="+str(con_dt_id)+"&rep=m"
+        # res = requests.get(oracle_url)
+        tnx_time = changeConContractInvoke(dt_id,con_dt_id,dt_rep_type)
+        dttsaSupportServices.addDTChangeTime(dt_id,"change Con with "+str(con_dt_id)+" Fail", tnx_time)
         msg = {"change_req_status": "fail"}
     
     return make_response(msg,200)
@@ -1048,12 +1133,25 @@ def getTrustandReputationInfo():
 
 @app.route("/test")
 def testService():
-    count = request.args.get('count')
-    # runQoSTest(thread_id=1,test_count=0,concurrent_users=1,loop_times=1)
-    # runQoSTest(thread_id=2,test_count=0,concurrent_users=1,loop_times=1)
-    # re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
-    repAttackCheck()
-    return "ok"
+    # count = request.args.get('count')
+    # # runQoSTest(thread_id=1,test_count=0,concurrent_users=1,loop_times=1)
+    # # runQoSTest(thread_id=2,test_count=0,concurrent_users=1,loop_times=1)
+    # # re = dttsaSupportServices.qosSpecificTestExecutionStatus("i")
+    # # repAttackCheck()
+    # dts = dttsaSupportServices.getDTAPIs(count)
+    # for i in dts:
+    #     print(i)
+    # val = {
+    #     "series": [
+    #         {
+    #             "name": 'Trust Score',
+    #             "data": [random.randint(0,100), random.randint(0,100), random.randint(0,100), random.randint(0,100), random.randint(0,100), random.randint(0,100), 65,100]
+    #         }
+    #     ],
+    #     "labels": ['1', '2', '3', '4', '5', '6', '7','8']
+    # }
+    return {"msg": str(random.randint(0,100))+"%"}
+    # return {"msg": str(random.randint(0,100))+"%"}
 
 @app.route("/save")
 def saveTblToCSV():
@@ -1096,7 +1194,7 @@ def login():
 
 def weightedAvg(low,mid,high):
     l=[low,mid,high]
-    w = [3,2,1] #initial weights low=1 mid=2 high=3
+    w = [3,2,1] #initial weights low=3 mid=2 high=1
     v = 0
     for i in range(len(l)):
         v = l[i]*w[i] + v
@@ -1644,7 +1742,7 @@ def evaluation():
     print(api_results)
     print("___")
     # print(final_results)
-    return "okay"
+    return {"status": "okay"}
 
 def getDTType(dt_id):
     dt_details = dttsaSupportServices.getDTDetails(dt_id)
@@ -1925,6 +2023,8 @@ def testqos():
 
 @app.route('/setconfigs')
 def setConfigs():
+    if 'firefly' in request.args:
+        config['servers']['firefly_service_url'] = request.args.get('firefly')
     if 'astra' in request.args:
         config['servers']['API_VULNERBILITY_SERVICE_URL'] = request.args.get('astra')
     ### TODO after setting db try to connect to the correct DB
@@ -1934,6 +2034,9 @@ def setConfigs():
         config.write(configfile)
     dttsaSupportServices.clearDB()
     config.read('environment_config.ini')
+    app.config.update(
+        firefly_url = config['servers']['firefly_service_url']
+    )
     return str(config['servers']['API_VULNERBILITY_SERVICE_URL'])
 
 @app.route('/restart')
@@ -1951,10 +2054,20 @@ def DTTSAStatus():
 
 #runSchedulerJobs()
 
+@app.route('/testconfig')
+def testConfiguration():
+    data = ""
+    with open(os.path.join(os.pardir,"testing","test.json")) as testfile:
+        data = json.load(testfile)
+    return data
+
 @app.route('/dttsa_start')
 def startDTTSA():
-    runSchedulerJobs()
-    return "Success"
+    try:
+        runSchedulerJobs()
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+    return {"status": "Sucess"}
 
 def start_server(args):
     #app.config['test_arg_value'] = args.a

@@ -299,12 +299,24 @@ class DTTSASupportServices:
             for r in report:
                 response_status = str(r['response'])
                 response_time = str(r['elapsed_time'])
-                cur.execute('insert into dt_change_con_data_submission_tbl  (DT_ID,response_status,response_time,status) values (%s,%s,%s,1);',(dt_id,response_status,response_time))
+                cur.execute('insert into dt_change_con_data_submission_tbl (DT_ID,response_status,response_time,status) values (%s,%s,%s,1);',(dt_id,response_status,response_time))
                 conn.commit()
             cur.close()
             conn.close()
         except Exception as e:
             print("error: addDTChangeConReports ", str(e))
+
+    def addDTChangeTime(self,dt_id,response_status,response_time):
+        try:
+            conn = self.dbConnection.get_db_connection()
+            cur = conn.cursor()
+            cur.execute('insert into dt_change_con_data_submission_tbl (DT_ID,response_status,response_time,status) values (%s,%s,%s,1);',(dt_id,response_status,response_time))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print("error: addDTChangeTime ", str(e))
+
 
     def saveTblsAsCSV(self):
         try:

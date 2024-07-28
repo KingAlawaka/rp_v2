@@ -1,0 +1,51 @@
+{
+    "version": "1.0",
+    "type": "policy",
+    "policies": [
+        {
+            "name": "Change Connections",
+            "description": "Stating policy for DT connection change",
+            "type": "specific",
+            "value": "normal"
+        },
+        {
+            "name": "Encryption standard",
+            "description": "Stating the Digital Twin ecosystem encryption standard",
+            "type": "specific",
+            "value": "ECDSA"
+        },
+        {
+            "name": "Governance type",
+            "description": "Stating the Digital Twin ecosystem governance type",
+            "type": "specific",
+            "value": "centralised"
+        },
+        {
+            "name": "DT 2 DT schema",
+            "description": "Stating the Digital Twin ecosystem common data schema",
+            "type": "specific",
+            "value": "DTDL (Microsoft)"
+        },
+        {
+            "name": "Number of Trust analysers",
+            "description": "Stating the number of trust analysers needs to be used in the Digital Twin ecosystem",
+            "type": "range",
+            "value": "1 to 3"
+        },
+        {
+            "name": "DT Implementation analysis ",
+            "description": "Stating the accepted analysis methods for Digital Twin implementations",
+            "type": "multiple",
+            "value": [
+                {
+                    "name": "FMVEA",
+                    "value": "Failure Mode Vulnerability and Effect Analysis Method"
+                },
+                {
+                    "name": "CHASSIS",
+                    "value": "Combined Harm Assessment of Safety and Security for Information Systems"
+                }
+            ]
+        }
+    ]
+}

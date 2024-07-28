@@ -1,0 +1,46 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+        "title": "Schemathesis.io Demo Project",
+        "description": "This service demonstrates the range of issues Schemathesis.io can identify in your API automatically",
+        "version": "0.1",
+        "contact": {
+            "name": "Schemathesis.io Support Team",
+            "email": "support@schemathesis.io"
+        }
+    },
+    "paths": {
+        "/dttsa_start": {
+            "get": {
+                "summary": "An issue where the server responds with unstructured error messages instead of the expected structured JSON format, leading to potential confusion and improper handling of the response.",
+                "description": "In this scenario, the server returns a malformed JSON string due to a typo while bypassing regular JSON serialization for perceived simplicity.\nThis could lead to errors in clients using standard JSON parsers to interpret the response.",
+                "responses": {
+                    "default": {
+                        "description": "Default response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "description": "Indicates whether response is successful."
+                                        }
+                                    },
+                                    "required": [
+                                        "success"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "https://example.schemathesis.io/"
+        }
+    ]
+}

@@ -48,6 +48,10 @@ dt_server_ips = [us_server]#,eu_server,asia_server,north_server]
 dt_start_fail_urls = []
 dt_backup_dt_ids = [] # [[per location ids], [per location ids]]
 
+dt_type_n = 3
+dt_type_m = 1
+dt_type_c = 1
+
 # random.seed(123456789)
 
 def makeURL(ip,port):
@@ -156,16 +160,30 @@ def startDTs(set_dt_type=False):
                         # dt_types = ['n','m','c']
                         print("Setting random DT types")
                         dt_type = random.choice(dt_types)
+
+                        dt_type_n = 3
+                        dt_type_m = 1
+                        dt_type_c = 1
+
+                        # while dt_type_n != 0 or dt_type_m !=0 or dt_type_c != 0:
+                        #     dt_type = random.choice(dt_types)
+                        #     if "c" == dt_type:
+                        #         dt_type_c -= 1
+                        #     elif "m" == dt_type:
+                        #         dt_type_m -= 1
+                        #     elif "n" == dt_type:
+                        #         dt_type_n -= 1
+
                         if l == asia_server:
                             payload = { "url" : makeURL(l,p) , "dttsa_url" : makeURL(main_server2,dttsa_port),"dt_type": dt_type }
                         else:
                             payload = { "url" : makeURL(l,p) , "dttsa_url" : makeURL(main_server,dttsa_port),"dt_type": dt_type}
-                    x = requests.post(url,json=payload)
-                    print(x.text)
-                    location_type_counter += 1
-                    if location_type_counter == same_type_count:
-                        dt_type_counter += 1
-                        location_type_counter = 0
+                        x = requests.post(url,json=payload)
+                        print(x.text)
+                        location_type_counter += 1
+                        if location_type_counter == same_type_count:
+                            dt_type_counter += 1
+                            location_type_counter = 0
                 except Exception as e:
                     print("start DTs loop error: "+ str(e))
                     dt_start_fail_urls.append(temp_url)

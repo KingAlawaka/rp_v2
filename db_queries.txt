@@ -617,7 +617,276 @@ select max(EXTRACT(EPOCH FROM (completed_timestamp - timestamp))) AS difference 
 
 
 
+--- 28/07/2024
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-1 order by dt_id asc;
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null order by dt_id asc;
 
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where status=-10 and dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+select distinct status from dt_type_tbl;
+
+
+select * from dt_change_con_data_submission_tbl;
+
+select avg(response_time) as avg_tx_time from dt_change_con_data_submission_tbl;
+
+
+select * from dttsa_execution_status_tbl where status = -1 and 
+
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -2 and function_name = 'QoS_pm' order by timestamp asc;
+
+select function_name, extract(epoch from e2.timestamp - e1.timestamp) / 60 difference
+from   (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_c' and execution_status='Started' order by timestamp asc
+) e1
+join (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_c' and execution_status='Finished' order by timestamp asc
+)   e2 using (function_name)
+where  e1.function_name = e2.function_name;
+
+select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_c' and execution_status='Started' order by timestamp asc;
+select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_c' and execution_status='Finished' order by timestamp asc;
+
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by timestamp asc;
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
+
+select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+
+select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
+
+select * from dttsa_trust_calculations_tbl where dt_id=15 and status=-5;
+select * from api_qos_records_tbl where status=-5 and dt_id=2;
+
+select * from backup_qos_records_tbl;
+
+
+
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-10 order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and status=-1 order by dt_id asc;
+
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_id=1 order by status desc;
+
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null and dt_type != dt_type_predict order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_type_predict is not null order by status asc;
+select distinct dt_id,dt_type,dt_type_predict,status from dt_type_tbl where dt_id=8 order by status asc; 
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -2 and function_name = 'QoS_pm' order by timestamp asc;
+
+select * from dttsa_execution_status_tbl where status = -4 and function_name = 'QoS_n' order by timestamp asc;
+
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by timestamp asc;
+select timestamp,completed_timestamp from api_security_check_tbl where status = -4 order by completed_timestamp desc;
+
+select * from api_security_check_tbl where timestamp != completed_timestamp and status = -4;
+
+select * from dttsa_trust_calculations_tbl where category = 'Backup QoS' and dt_id=15;
+
+select * from dttsa_trust_calculations_tbl where dt_id=2 order by status desc; and status=-1;
+select * from api_qos_records_tbl where status=-3 and dt_id=1;
+
+select * from backup_qos_records_tbl;
+
+select * from dt_tbl;
+select * from reputation_categorization_tbl where dt_id=3;
+
+select distinct dt_id from dt_sub_tbl;
+
+select * from dt_sub_tbl;
+update dt_sub_tbl set status=-1 where dt_id=2 and sub_dt_id=1 and status=1;
+
+select dt_type_predict,count(dt_type_predict) as type_count from dt_type_tbl where dt_type_predict is not null and dt_id=2 group by dt_type_predict order by type_count desc;
+
+select category,count(category) as category_count from reputation_categorization_tbl where dt_id=1 group by category order by category_count desc;
+
+select * from dt_data_submission_tbl where dt_id=2 and sub_dt_id=1;
+select * from dt_data_submission_tbl where sub_dt_id=2 and dt_id !=2;
+select distinct dt_id from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS';
+select min(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select max(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select avg(avg) from dt_data_submission_tbl where sub_dt_id=1 and data_type='QoS' and status=-1;
+select avg  from dt_data_submission_tbl where sub_dt_id=1 and dt_id=2 and data_type='QoS'; and status=-1;
+
+select min(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+select max(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+select avg(time_per_req_mean) from api_qos_records_tbl where status=-1 and dt_id=1;
+
+select * from dt_data_submission_tbl where data_type='QoS' and sub_dt_id=2 and status=1;
+select * from dttsa_dt_values_impact_categories_tbl where status = -1  and dt_id=5 and sub_dt_id=2 order by sub_dt_id;
+select dt_id,sub_dt_id,status,dt_impact_prediction,count(dt_impact_prediction) from dttsa_dt_values_impact_categories_tbl where status = -2  and sub_dt_id=3 group by dt_id,sub_dt_id,status,dt_impact_prediction order by sub_dt_id;
+select dt_id,change_dt,result from change_requests_tbl;
+
+SELECT dt_id, change_dt,CASE WHEN result = '1' THEN 'success' ELSE 'fail' END AS result FROM change_requests_tbl;
+select * from dttsa_dt_values_impact_categories_tbl where sub_dt_id=4;
+select * from reputation_attack_log_tbl;
+select * from dttsa_trust_calculations_tbl where status =-1 order by dt_id;
+select avg(response_time) as avg_tx_time from dt_change_con_data_submission_tbl;
+select * from reputation_attack_possibilities;
+select * from dt_tbl;
+select * from dt_sub_tbl where dt_id=5;
+select distinct dt_id from dt_sub_tbl where sub_dt_id = 1 and type !='POST' union select distinct sub_dt_id from dt_sub_tbl where dt_id = 1 and type='POST';
+select dt_id,sub_dt_id,dt_impact_prediction,count(dt_impact_prediction) as hit_count from dttsa_dt_values_impact_categories_tbl where status = -2 and category='QoS' and sub_dt_id=1 group by dt_id,sub_dt_id,dt_impact_prediction order by hit_count desc;
+select * from dttsa_trust_calculations_tbl where status =-2 and dt_id=1 and category='DTTSA QoS'; 
+
+select dt_id,attacked_dt,logic,count(attacked_dt) from reputation_attack_possibilities group by dt_id,logic,attacked_dt order by dt_id asc;
+select dt_id,attacked_dt,analysis,logic,attack,rep_attack_prediction,confirmation from reputation_attack_possibilities order by dt_id asc;
+
+
+select * from debug_msg order by id desc;
+
+select dt_id,sub_dt_id,dt_impact_prediction,count(dt_impact_prediction) as hit_count from dttsa_dt_values_impact_categories_tbl where status =-1 and category='Values' and sub_dt_id=1 group by dt_id,sub_dt_id,dt_impact_prediction order by hit_count desc;
+
+select * from dttsa_execution_status_tbl;
+
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and dt_id=5 order by dt_id asc;
+
+select distinct dt_id,dt_type,dt_type_predict,count(dt_type_predict) as hit_count from dt_type_tbl where dt_type_predict is not null and dt_id=5 group by dt_id,dt_type,dt_type_predict order by hit_count desc;
+select distinct dt_id, dt_type from dt_type_tbl;
+
+select * from (
+select DISTINCT ON (dt_id) dt_id,dt_type_predict,count(dt_type_predict) as hits from dt_type_tbl where dt_type_predict is not null group by dt_id,dt_type_predict order by dt_id,hits desc)
+e1 
+inner join reputation_attack_possibilities on reputation_attack_possibilities.attacked_dt = e1.dt_id where e1.dt_type_predict !='n' and reputation_attack_possibilities.attack = 'Self Promote'
+;
+
+select dt_id,dt_type_predict,count(dt_type_predict) from dt_type_tbl where dt_type_predict is not null group by dt_id,dt_type_predict;
+select DISTINCT ON (dt_id) dt_id,dt_type_predict,count(dt_type_predict) as hits from dt_type_tbl where dt_type_predict is not null group by dt_id,dt_type_predict order by dt_id,hits desc;
+select * from reputation_attack_possibilities where rep_attack_prediction='RA';
+select distinct dt_id,attacked_dt,analysis,using_category, attack from reputation_attack_possibilities where rep_attack_prediction='RA';
+
+select distinct dt_id,attacked_dt, attack from reputation_attack_possibilities where rep_attack_prediction='RA';
+
+select * from dt_sub_tbl where status = 1;
+select * from dt_tbl where status=1;
+--rep attack log
+select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl;
+select * from reputation_attack_log_tbl;
+select * from reputation_attack_possibilities
+
+--Rep attacks
+select distinct dt_id,attacked_dt from reputation_attack_possibilities where rep_attack_prediction='RA';
+
+--getting TP
+select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl
+intersect
+select distinct dt_id,attacked_dt from reputation_attack_possibilities where rep_attack_prediction='RA';
+
+--getting FN
+(select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl
+EXCEPT
+select distinct dt_id,attacked_dt from reputation_attack_possibilities where rep_attack_prediction='RA')
+intersect
+(select distinct dt_id,sub_dt_id from dt_sub_tbl where dt_id = 2 and sub_dt_id=3
+union
+select distinct dt_id,sub_dt_id from dt_sub_tbl where dt_id = 3 and sub_dt_id=2);
+
+--getting FP
+select distinct dt_id,attacked_dt from reputation_attack_possibilities where rep_attack_prediction='RA'
+EXCEPT
+select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl;
+
+--getting TN
+select distinct dt_id,sub_dt_id from dt_sub_tbl
+except
+select distinct dt_id,attacked_dt_id from reputation_attack_log_tbl;
+
+select function_name, extract(epoch from e2.timestamp - e1.timestamp) / 60 difference
+from   (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Started' order by timestamp asc
+) e1
+join (select * from dttsa_execution_status_tbl where status = -3 and function_name = 'QoS_m' and execution_status='Finished' order by timestamp asc
+)   e2 using (function_name)
+where  e1.function_name = e2.function_name;
+
+select distinct dt_id from dt_type_tbl where dt_type_predict is not null and dt_type_predict='n' order by dt_id asc;
+select * from dt_sub_tbl where dt_id=1 and status=-1 ;
+select * from api_tbl where DT_ID !=5 and status=1 and (description = '[GET][OUT]' or description = '[POST][OUT]') and DT_ID in (select distinct dt_id from dt_type_tbl where dt_type_predict is not null and dt_type_predict='n' order by dt_id asc) and DT_ID not in (select sub_dt_id from dt_sub_tbl where dt_id=5 and status=-1);
+
+select distinct dt_id FROM dt_data_submission_tbl where status=1;
+
+select dt_id,sub_dt_id,count(dt_id) from dt_sub_tbl where status=1 group by dt_id,sub_dt_id order by dt_id;
+select * from change_requests_tbl;
+select avg(response_time) from dt_change_con_data_submission_tbl;
+select * from dt_change_con_data_submission_tbl where dt_id=1;
+select * from dt_change_con_data_submission_tbl;
+select distinct dt_id from dt_sub_tbl;
+
+insert into dt_change_con_data_submission_tbl  (DT_ID,response_status,response_time) values (1,'fail',2.33333);
+create table dt_change_con_data_submission_tbl
+(
+	id serial,
+	DT_ID int,
+	response_status text,
+    response_time float,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+
+create table change_requests_tbl(
+	id serial,
+	dt_id int,
+	change_dt int,
+	dt_rep_cat text,
+	change_dt_rep_cat text,
+	result text,
+	dt_url text,
+	timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	completed_timestamp timestamp with time zone not null default (current_timestamp at time zone 'UTC'),
+	status int default 1
+);
+
+select * from change_requests_tbl; where dt_id=1 and change_dt=2 and status = 1;
+select avg(EXTRACT(EPOCH FROM (completed_timestamp - timestamp))) AS difference from change_requests_tbl;
+select min(response_time) from dt_change_con_data_submission_tbl;
+select max(response_time) from dt_change_con_data_submission_tbl;
+select avg(response_time) from dt_change_con_data_submission_tbl;
+
+select * from dttsa_trust_scores_tbl where dt_id=4 and status=1 order by iteration_id asc;
+
+select avg(EXTRACT(EPOCH FROM (completed_timestamp - timestamp))) AS difference from change_requests_tbl;
+select min(EXTRACT(EPOCH FROM (completed_timestamp - timestamp))) AS difference from change_requests_tbl;
+select max(EXTRACT(EPOCH FROM (completed_timestamp - timestamp))) AS difference from change_requests_tbl;
+CASE 
+    WHEN status_column = 1 THEN 'success'
+    WHEN status_column = 0 THEN 'fail'
+    ELSE 'unknown' -- Optional: Handles cases where the column value is neither 1 nor 0
+  END AS result
+ case when category = 'positive' then count(category) when  end as cat_count
+select dt_id,category,count(category) from reputation_categorization_tbl where dt_id=2 group by dt_id,category;
+
+select distinct dt_id,dt_type,dt_type_predict from dt_type_tbl where dt_type_predict is not null and status=-1 order by dt_id asc;
+select dt_id,category,dt_type_prediction,count(dt_type_prediction) from dttsa_trust_calculations_tbl where dt_id=1 group by dt_id,category,dt_type_prediction order by category asc;
+
+select * from change_requests_tbl;
+select * from dttsa_trust_scores_tbl where dt_id=1 and status=1 order by iteration_id asc;
+select * from dt_tbl where status=1;
+select distinct function_name from dttsa_execution_status_tbl;
+select * from dttsa_execution_status_tbl where function_name='QoS_i' and status = -1 and execution_status='Started';
+select * from dttsa_execution_status_tbl where function_name='QoS_i' and status = -1 and execution_status='Finished';
+
+SELECT dt_id, change_dt,CASE WHEN result = '1' THEN 'success' ELSE 'fail' END AS result FROM change_requests_tbl;
+
+select * from dt_tbl where status=1;
+SELECT distinct dt_id, change_dt,CASE WHEN result = '1' THEN 'success' ELSE 'fail' END AS result FROM change_requests_tbl order by dt_id asc;
+
+select * from dttsa_trust_scores_tbl where dt_id=1 and status=1 order by iteration_id asc;
+
+SELECT distinct dt_id, change_dt,CASE WHEN result = '1' THEN 'success' ELSE 'fail' END AS result FROM change_requests_tbl order by dt_id asc;
+--execution times
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp asc limit 1;
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'QoS_%' order by timestamp desc limit 1;
+
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'API' order by timestamp asc limit 1
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'API' order by timestamp desc limit 1;
+
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'BQoS' order by timestamp asc limit 1;
+select * from dttsa_execution_status_tbl where status = -1 and function_name like 'BQoS' order by timestamp desc limit 1;
 
 
 
